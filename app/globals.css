@@ -1,26 +1,294 @@
+/* ============================================
+   RULE: @import must be ABSOLUTELY FIRST.
+   Before Tailwind, before everything.
+   ============================================ */
+/* Tailwind v4 core — comes after @imports */
 @import "tailwindcss";
 
+/* ============================================
+   LAYER 1: Raw design tokens (your source of truth)
+   These are just CSS variables — no Tailwind involved yet.
+   Every color from your Stitch HTML lives here.
+   ============================================ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* --- Surfaces --- */
+  --surface: #f8f9ff;
+  --surface-dim: #cbdbf5;
+  --surface-bright: #f8f9ff;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #eff4ff;
+  --surface-container: #e5eeff;
+  --surface-container-high: #dce9ff;
+  --surface-container-highest: #d3e4fe;
+  --surface-variant: #d3e4fe;
+  --surface-tint: #565e74;
+
+  /* --- Text on surfaces --- */
+  --on-surface: #0b1c30;
+  --on-surface-variant: #45464d;
+  --inverse-surface: #213145;
+  --inverse-on-surface: #eaf1ff;
+
+  /* --- Borders --- */
+  --outline: #76777d;
+  --outline-variant: #c6c6cd;
+
+  /* --- Primary (black/dark navy) --- */
+  --primary: #000000;
+  --primary-container: #131b2e;
+  --primary-fixed: #dae2fd;
+  --primary-fixed-dim: #bec6e0;
+  --on-primary: #ffffff;
+  --on-primary-container: #7c839b;
+  --on-primary-fixed: #131b2e;
+  --on-primary-fixed-variant: #3f465c;
+  --inverse-primary: #bec6e0;
+
+  /* --- Secondary (your brand indigo — used for buttons, chips, indicators) --- */
+  --brand-secondary: #4648d4;
+  --brand-secondary-container: #6063ee;
+  --brand-secondary-fixed: #e1e0ff;
+  --brand-secondary-fixed-dim: #c0c1ff;
+  --brand-on-secondary: #ffffff;
+  --brand-on-secondary-container: #fffbff;
+  --brand-on-secondary-fixed: #07006c;
+  --brand-on-secondary-fixed-variant: #2f2ebe;
+
+  /* --- Tertiary --- */
+  --tertiary: #000000;
+  --tertiary-container: #191c1e;
+  --tertiary-fixed: #e0e3e5;
+  --tertiary-fixed-dim: #c4c7c9;
+  --on-tertiary: #ffffff;
+  --on-tertiary-container: #818486;
+  --on-tertiary-fixed: #191c1e;
+  --on-tertiary-fixed-variant: #444749;
+
+  /* --- Error --- */
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error: #ffffff;
+  --on-error-container: #93000a;
+
+  /* --- Background --- */
+  --background: #f8f9ff;
+  --on-background: #0b1c30;
+
+  /* ============================================
+     SHADCN VARIABLES
+     shadcn components (Button, Card, Badge etc.)
+     look for THESE specific names in HSL format.
+     We point them at YOUR brand values.
+     HSL = Hue Saturation% Lightness% (no #, no hsl())
+     
+     How to convert: #4648d4 → HSL → "243 64% 55%"
+     Use: https://htmlcolors.com/hex-to-hsl
+     ============================================ */
+  --shadcn-background: 225 100% 99%;       /* = your --surface */
+  --shadcn-foreground: 215 50% 12%;        /* = your --on-surface */
+  --shadcn-card: 0 0% 100%;
+  --shadcn-card-foreground: 215 50% 12%;
+  --shadcn-popover: 0 0% 100%;
+  --shadcn-popover-foreground: 215 50% 12%;
+  --shadcn-primary: 0 0% 0%;              /* black */
+  --shadcn-primary-foreground: 0 0% 100%;
+  --shadcn-secondary: 243 64% 55%;         /* = your brand indigo */
+  --shadcn-secondary-foreground: 0 0% 100%;
+  --shadcn-muted: 215 20% 95%;
+  --shadcn-muted-foreground: 215 10% 40%;
+  --shadcn-accent: 243 64% 95%;
+  --shadcn-accent-foreground: 243 64% 55%;
+  --shadcn-destructive: 0 84% 42%;
+  --shadcn-destructive-foreground: 0 0% 100%;
+  --shadcn-border: 215 10% 85%;
+  --shadcn-input: 215 10% 85%;
+  --shadcn-ring: 243 64% 55%;
+  --radius: 0.5rem;
 }
 
-@theme inline {
+/* ============================================
+   LAYER 2: @theme block
+   This is Tailwind v4's replacement for tailwind.config.ts.
+   
+   THE RULE: In @theme, you define --color-X and Tailwind
+   automatically creates bg-X, text-X, border-X classes for you.
+   Similarly --spacing-X creates p-X, m-X, gap-X etc.
+   ============================================ */
+@theme {
+  /* --- Your surface colors → bg-surface, bg-surface-container etc. --- */
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-bright: var(--surface-bright);
+  --color-surface-container-lowest: var(--surface-container-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-surface-variant: var(--surface-variant);
+
+  /* --- Text colors → text-on-surface etc. --- */
+  --color-on-surface: var(--on-surface);
+  --color-on-surface-variant: var(--on-surface-variant);
+  --color-inverse-surface: var(--inverse-surface);
+  --color-inverse-on-surface: var(--inverse-on-surface);
+
+  /* --- Borders → border-outline-variant etc. --- */
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+
+  /* --- Primary colors --- */
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--on-primary);
+  --color-on-primary-container: var(--on-primary-container);
+
+  /* --- Your brand indigo → bg-secondary, text-secondary etc.
+         We use the name "secondary" here so your Stitch classes
+         like bg-secondary work without renaming anything.
+         shadcn gets its own separate variable above. --- */
+  --color-secondary: var(--brand-secondary);
+  --color-secondary-container: var(--brand-secondary-container);
+  --color-on-secondary: var(--brand-on-secondary);
+  --color-on-secondary-container: var(--brand-on-secondary-container);
+
+  /* --- Tertiary --- */
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+
+  /* --- Error --- */
+  --color-error: var(--error);
+  --color-error-container: var(--error-container);
+  --color-on-error: var(--on-error);
+  --color-on-error-container: var(--on-error-container);
+
+  /* --- Background --- */
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-on-background: var(--on-background);
+
+  /* ============================================
+     Typography
+     --font-size-X creates the text-X class.
+     Notice we also set line-height and letter-spacing
+     as separate variables — Tailwind v4 reads them together.
+     ============================================ */
+
+  /* ============================================
+     Spacing
+     --spacing-X creates p-X, m-X, gap-X, px-X etc.
+     ============================================ */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 4rem;
+  --spacing-gutter: 24px;
+
+  /* ============================================
+     Sizing — for max-w-container-max
+     ============================================ */
+  --width-container-max: 1280px;
+
+  /* Font families */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================
+   LAYER 3: Base styles
+   Applied globally to every element.
+   ============================================ */
+@layer base {
+  * {
+    /* Makes shadcn borders use your border color */
+    border-color: hsl(var(--shadcn-border));
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--surface);
+    color: var(--on-surface);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Material Symbols — prevents invisible icon flash on load */
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .text-display-lg {
+    font-size: 64px;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+    font-weight: 800;
+  }
+
+  .text-display-lg-mobile {
+    font-size: 40px;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-weight: 800;
+  }
+
+  .text-headline-xl {
+    font-size: 48px;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  .text-headline-xl-mobile {
+    font-size: 32px;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  .text-headline-md {
+    font-size: 24px;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+
+  .text-body-lg {
+    font-size: 18px;
+    line-height: 1.6;
+    font-weight: 400;
+  }
+
+  .text-body-md {
+    font-size: 16px;
+    line-height: 1.6;
+    font-weight: 400;
+  }
+
+  .text-label-md {
+    font-size: 14px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    font-weight: 500;
+  }
+
+  .text-label-sm {
+    font-size: 12px;
+    line-height: 1;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+  }
 }
