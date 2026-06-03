@@ -10,7 +10,7 @@ export default function HeroSection() {
     // bg-surface-container-lowest = pure white (#ffffff) — your token.
     // py-24 md:py-32 matches Stitch's padding.
     // overflow-hidden stops the glow div from causing horizontal scroll.
-    <section className="bg-surface-container-lowest py-24 md:py-32 px-gutter overflow-hidden relative">
+    <section className="bg-surface-container-lowest py-20 md:py-24 px-gutter overflow-hidden relative">
       <div className="max-w-container-max mx-auto text-center relative z-10">
 
         {/* 

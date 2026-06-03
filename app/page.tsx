@@ -2,12 +2,12 @@
 // This file is just an orchestrator — it imports and arranges sections.
 // No styles, no logic live here. Think of it as a table of contents.
 
-import Header from "@/components/header";
-import HeroSection from "@/components/herosection";
-import FeaturesSection from "@/components/featureSection";
-import HowItWorksSection from "@/components/howItWorksSection";
-import PricingSection from "@/components/pricingSection";
-import Footer from "@/components/footer";
+import Header from "@/components/landingPage/header";
+import HeroSection from "@/components/landingPage/herosection";
+import FeaturesSection from "@/components/landingPage/featureSection";
+import HowItWorksSection from "@/components/landingPage/howItWorksSection";
+import PricingSection from "@/components/landingPage/pricingSection";
+import Footer from "@/components/landingPage/footer";
 
 export default function Home() {
   return (
