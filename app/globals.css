@@ -84,15 +84,15 @@
      How to convert: #4648d4 → HSL → "243 64% 55%"
      Use: https://htmlcolors.com/hex-to-hsl
      ============================================ */
-  --shadcn-background: 225 100% 99%;       /* = your --surface */
-  --shadcn-foreground: 215 50% 12%;        /* = your --on-surface */
+  --shadcn-background: 225 100% 99%; /* = your --surface */
+  --shadcn-foreground: 215 50% 12%; /* = your --on-surface */
   --shadcn-card: 0 0% 100%;
   --shadcn-card-foreground: 215 50% 12%;
   --shadcn-popover: 0 0% 100%;
   --shadcn-popover-foreground: 215 50% 12%;
-  --shadcn-primary: 0 0% 0%;              /* black */
+  --shadcn-primary: 0 0% 0%; /* black */
   --shadcn-primary-foreground: 0 0% 100%;
-  --shadcn-secondary: 243 64% 55%;         /* = your brand indigo */
+  --shadcn-secondary: 243 64% 55%; /* = your brand indigo */
   --shadcn-secondary-foreground: 0 0% 100%;
   --shadcn-muted: 215 20% 95%;
   --shadcn-muted-foreground: 215 10% 40%;
@@ -151,6 +151,12 @@
   --color-on-secondary: var(--brand-on-secondary);
   --color-on-secondary-container: var(--brand-on-secondary-container);
 
+  --color-secondary-fixed: var(--brand-secondary-fixed);
+  --color-secondary-fixed-dim: var(--brand-secondary-fixed-dim);
+  --color-on-secondary-fixed: var(--brand-on-secondary-fixed);
+  --color-on-secondary-fixed-variant: var(--brand-on-secondary-fixed-variant);
+
+
   /* --- Tertiary --- */
   --color-tertiary: var(--tertiary);
   --color-tertiary-container: var(--tertiary-container);
@@ -191,7 +197,7 @@
   --width-container-max: 1280px;
 
   /* Font families */
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ============================================
@@ -208,14 +214,14 @@
   body {
     background-color: var(--surface);
     color: var(--on-surface);
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   /* Material Symbols — prevents invisible icon flash on load */
   .material-symbols-outlined {
-    font-family: 'Material Symbols Outlined';
+    font-family: "Material Symbols Outlined";
     font-weight: normal;
     font-style: normal;
     font-size: 24px;
@@ -226,7 +232,11 @@
     white-space: nowrap;
     direction: ltr;
     -webkit-font-smoothing: antialiased;
-    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    font-variation-settings:
+      "FILL" 0,
+      "wght" 400,
+      "GRAD" 0,
+      "opsz" 24;
   }
 }
 
@@ -294,5 +304,6 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* scroll-behavior: smooth; */
+  data-scroll-behavior: smooth
 }
