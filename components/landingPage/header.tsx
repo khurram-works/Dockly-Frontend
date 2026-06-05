@@ -58,8 +58,12 @@ export default function Header() {
 
         {/* ── CTA Buttons ── */}
         <div className="flex items-center gap-md">
-          <Button variant="ghost" className="hidden md:block">Login</Button>
-          <Button>Get Started</Button>
+          <Link href="/login">
+            <Button variant="ghost" className="hidden md:block">Login</Button>
+          </Link>
+          <Link href="/register">
+            <Button>Get Started</Button>
+          </Link>
         </div>
 
       </div>

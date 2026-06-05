@@ -1,12 +1,114 @@
+'use client';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError, UseFormRegisterReturn } from "react-hook-form";
+import { useState } from "react";
+
+interface FormFieldProps {
+  id: string;
+  label: string;
+  type?: string;
+  placeholder: string;
+
+  registration: UseFormRegisterReturn;
+  error?: FieldError;
+
+  isPassword?: boolean;
+  showPassword?: boolean;
+  onTogglePassword?: () => void;
+}
+
+function FormField({
+  id,
+  label,
+  type = "text",
+  placeholder,
+  registration,
+  error,
+  isPassword = false,
+  showPassword = false,
+  onTogglePassword,
+}: FormFieldProps) {
+  return (
+    <div className="space-y-xs">
+      <label htmlFor={id} className="block text-label-md text-on-surface">
+        {label}
+      </label>
+
+      <div className="relative">
+        <input
+          id={id}
+          type={isPassword ? (showPassword ? "text" : "password") : type}
+          placeholder={placeholder}
+          {...registration}
+          className={`
+            w-full rounded-lg border border-outline-variant
+            bg-surface-bright px-4 py-3
+            text-body-md text-on-surface
+            placeholder:text-outline
+            focus:border-secondary
+            focus:ring-2
+            focus:ring-secondary/20
+            focus:outline-none
+            transition-all shadow-sm
+            ${isPassword ? "pr-12" : ""}
+          `}
+        />
+
+        {isPassword && (
+          <button
+            type="button"
+            onClick={onTogglePassword}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              {showPassword ? "visibility_off" : "visibility"}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {error && <p className="text-sm text-red-500">{error.message}</p>}
+    </div>
+  );
+}
 
 export default function LoginPage() {
+  const [showPassword, setShowPassword] = useState(true);
+  const LoginSchema = z.object({
+    email: z.email({ message: "Please enter a valid email address" }),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/,
+        "Password must contain uppercase, lowercase, number and special character",
+      ),
+  });
+
+  type LoginFormData = z.infer<typeof LoginSchema>;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(LoginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+    mode: "onTouched",
+  });
+
+  const onSubmit = (data: LoginFormData) => {
+    console.log(data);
+  };
   return (
-    <main 
-    className="min-h-screen flex flex-col justify-center items-center p-4"
-    >
+    <main className="min-h-screen flex flex-col justify-center items-center p-4">
       <div className="mb-8 text-center flex gap-1">
         <Image
           src="/logo.png"
@@ -19,7 +121,7 @@ export default function LoginPage() {
           Dockly
         </span>
       </div>
-      <div className="w-auto bg-surface-container-lowest rounded-xl shadow-[0px_20px_25px_-5px_rgba(15,23,42,0.1)] border border-outline-variant/30 p-8">
+      <div className="w-1/3 bg-surface-container-lowest rounded-xl shadow-[0px_20px_25px_-5px_rgba(15,23,42,0.1)] border border-outline-variant/30 p-8">
         <div className="text-center mb-8">
           <h1 className="font-headline-md text-headline-md text-on-surface mb-2">
             Welcome back
@@ -28,9 +130,9 @@ export default function LoginPage() {
             Login to your company dashboard
           </p>
         </div>
-        <form className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-4">
-            <div>
+            {/* <div>
               <label className="block font-label-md text-label-md text-on-surface mb-1.5">
                 Email Address
               </label>
@@ -39,30 +141,31 @@ export default function LoginPage() {
                 id="email"
                 placeholder="name@company.com"
                 type="email"
+                {...register("email")}
               />
-            </div>
-            <div>
-              <label className="block font-label-md text-label-md text-on-surface mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  className="w-full h-11 pl-3 pr-10 bg-surface-bright border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition-colors font-body-md text-body-md text-on-surface"
-                  id="password"
-                  placeholder="••••••••"
-                  type="password"
-                />
-                <button
-                  aria-label="Toggle password visibility"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-on-surface-variant hover:text-on-surface focus:outline-none"
-                  type="button"
-                >
-                  <span className="material-symbols-outlined text-[20px]">
-                    visibility_off
-                  </span>
-                </button>
-              </div>
-            </div>
+              {errors.email && (
+                <span className="text-red-500 text-sm mt-1">
+                  {errors.email.message}
+                </span>
+              )}
+            </div> */}
+            <FormField
+                id="email"
+                label="Email"
+                placeholder="cybros@gmail.com"
+                registration={register("email")}
+                error={errors.email}
+              />
+              <FormField
+                id="password"
+                label="Password"
+                placeholder="********"
+                registration={register("password")}
+                error={errors.password}
+                isPassword
+                showPassword={showPassword}
+                onTogglePassword={() => setShowPassword((prev) => !prev)}
+              />
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center">
@@ -87,9 +190,10 @@ export default function LoginPage() {
           <div>
             <Button
               className="w-full h-12 flex justify-center items-center px-4 rounded-lg  shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary"
+              disabled={isSubmitting}
               type="submit"
             >
-              Login to Dashboard
+              {isSubmitting ? "Logging in..." : "Login to Dashboard"}
             </Button>
           </div>
         </form>
@@ -107,8 +211,9 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="mt-6">
-          <Button variant={"outline"} 
-          className="w-full h-11 flex justify-center items-center px-4 rounded-lg  text-on-surface font-label-md text-label-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary
+          <Button
+            variant={"outline"}
+            className="w-full h-11 flex justify-center items-center px-4 rounded-lg  text-on-surface font-label-md text-label-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary
           active:scale-95"
           >
             <svg

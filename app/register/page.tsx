@@ -4,6 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FieldError, UseFormRegisterReturn } from "react-hook-form";
 
 // ─────────────────────────────────────────────
 // Local helper component — defined in the same file because it's only
@@ -14,12 +18,14 @@ import { Button } from "@/components/ui/button";
 interface FormFieldProps {
   id: string;
   label: string;
-  type?: string; // defaults to "text"
+  type?: string;
   placeholder: string;
-  value: string;
-  onChange: (value: string) => void;
-  isPassword?: boolean; // renders the visibility toggle button
-  showPassword?: boolean; // current visibility state
+
+  registration: UseFormRegisterReturn;
+  error?: FieldError;
+
+  isPassword?: boolean;
+  showPassword?: boolean;
   onTogglePassword?: () => void;
 }
 
@@ -28,58 +34,43 @@ function FormField({
   label,
   type = "text",
   placeholder,
-  value,
-  onChange,
+  registration,
+  error,
   isPassword = false,
   showPassword = false,
   onTogglePassword,
 }: FormFieldProps) {
   return (
     <div className="space-y-xs">
-      <label
-        htmlFor={id}
-        // text-label-md = 14px/500 weight — your custom utility class
-        className="block text-label-md text-on-surface"
-      >
+      <label htmlFor={id} className="block text-label-md text-on-surface">
         {label}
       </label>
 
-      {/*
-        The relative div is needed for password fields so we can
-        absolutely position the visibility toggle button inside the input.
-      */}
       <div className="relative">
         <input
           id={id}
-          name={id}
-          // For password fields: if showPassword is true, show as text
           type={isPassword ? (showPassword ? "text" : "password") : type}
           placeholder={placeholder}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          required
+          {...registration}
           className={`
             w-full rounded-lg border border-outline-variant
             bg-surface-bright px-4 py-3
             text-body-md text-on-surface
             placeholder:text-outline
-            focus:border-secondary focus:ring-2 focus:ring-secondary/20 focus:outline-none
+            focus:border-secondary
+            focus:ring-2
+            focus:ring-secondary/20
+            focus:outline-none
             transition-all shadow-sm
             ${isPassword ? "pr-12" : ""}
           `}
         />
 
-        {/*
-          Password visibility toggle — only renders for password fields.
-          The button sits absolutely positioned at the right edge of the input.
-        */}
         {isPassword && (
           <button
             type="button"
             onClick={onTogglePassword}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center 
-                       text-outline hover:text-on-surface-variant transition-colors"
-            aria-label={showPassword ? "Hide password" : "Show password"}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center"
           >
             <span className="material-symbols-outlined text-[20px]">
               {showPassword ? "visibility_off" : "visibility"}
@@ -87,6 +78,8 @@ function FormField({
           </button>
         )}
       </div>
+
+      {error && <p className="text-sm text-red-500">{error.message}</p>}
     </div>
   );
 }
@@ -98,28 +91,57 @@ export default function RegisterPage() {
   // Form state — one useState per field.
   // In a real app you'd use react-hook-form or zod for validation,
   // but for now this is clean and understandable.
-  const [company, setCompany] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Password visibility state — separate for each password field
   const [showPassword, setShowPassword] = useState(false);
+
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    // Prevent the default browser form submission (which reloads the page).
-    // In a real app, you'd call your API here.
-    e.preventDefault();
+  const registrationSchema = z
+    .object({
+      company: z.string().min(1, "Company name is required"),
 
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
+      name: z.string().min(1, "Full name is required"),
 
-    console.log({ company, name, email, password });
-    // TODO: call your registration API
+      email: z.email("Invalid email address"),
+
+      password: z
+        .string()
+        .min(8, "Password must be at least 8 characters")
+        .regex(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/,
+          "Password must contain uppercase, lowercase, number and special character",
+        ),
+
+      confirmPassword: z
+        .string()
+        .min(8, "Confirm password must be at least 8 characters"),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords do not match",
+      path: ["confirmPassword"],
+    });
+
+  type RegistrationFormData = z.infer<typeof registrationSchema>;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegistrationFormData>({
+    resolver: zodResolver(registrationSchema),
+    defaultValues: {
+      company: "",
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    mode: "onTouched",
+  });
+
+  const onSubmit = (data: RegistrationFormData) => {
+    const { confirmPassword, ...formData } = data;
+    console.log(formData);
   };
 
   return (
@@ -307,72 +329,56 @@ export default function RegisterPage() {
               This handles both button clicks AND pressing Enter in any field.
               We use our FormField helper component for each input.
             */}
-            <form onSubmit={handleSubmit} className="space-y-md">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-md">
               <FormField
                 id="company"
                 label="Company Name"
                 placeholder="Acme Corp"
-                value={company}
-                onChange={setCompany}
+                registration={register("company")}
+                error={errors.company}
               />
 
               <FormField
                 id="name"
                 label="Full Name"
                 placeholder="Jane Doe"
-                value={name}
-                onChange={setName}
+                registration={register("name")}
+                error={errors.name}
               />
 
               <FormField
                 id="email"
                 label="Work Email"
                 type="email"
-                placeholder="jane@acmecorp.com"
-                value={email}
-                onChange={setEmail}
+                placeholder="jane@company.com"
+                registration={register("email")}
+                error={errors.email}
               />
 
               <FormField
                 id="password"
                 label="Password"
-                placeholder="••••••••"
-                value={password}
-                onChange={setPassword}
+                placeholder="********"
+                registration={register("password")}
+                error={errors.password}
                 isPassword
                 showPassword={showPassword}
                 onTogglePassword={() => setShowPassword((prev) => !prev)}
               />
 
               <FormField
-                id="confirm_password"
+                id="confirmPassword"
                 label="Confirm Password"
-                placeholder="••••••••"
-                value={confirmPassword}
-                onChange={setConfirmPassword}
+                placeholder="********"
+                registration={register("confirmPassword")}
+                error={errors.confirmPassword}
                 isPassword
                 showPassword={showConfirmPassword}
                 onTogglePassword={() => setShowConfirmPassword((prev) => !prev)}
               />
 
-              {/*
-                Submit button — mt-xl adds extra space above it to separate
-                it visually from the form fields. The gradient matches your
-                Stitch HTML exactly. We use a plain button here instead of
-                the shadcn Button because we need the gradient — shadcn's
-                Button uses solid bg colors and would fight the gradient.
-              */}
-              <Button
-                type="submit"
-                className="w-full mt-xl 
-                           bg-linear-to-b from-secondary-container to-secondary 
-                            
-                           py-3 px-4 rounded-lg shadow-sm 
-                           hover:shadow-md hover:from-secondary hover:to-secondary-container 
-                           transition-all duration-200 
-                          "
-              >
-                Create Account
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? "Creating..." : "Create Account"}
               </Button>
             </form>
 
