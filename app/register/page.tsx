@@ -139,9 +139,21 @@ export default function RegisterPage() {
     mode: "onTouched",
   });
 
-  const onSubmit = (data: RegistrationFormData) => {
-    const { confirmPassword, ...formData } = data;
-    console.log(formData);
+  const onSubmit = async(data: RegistrationFormData) => {
+
+     const { confirmPassword, ...formData } = data;
+
+    const response = await fetch("http://localhost:5000/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
+
+    const result = await response.json();
+    console.log(result);
+
   };
 
   return (

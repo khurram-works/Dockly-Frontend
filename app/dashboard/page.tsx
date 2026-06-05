@@ -2,7 +2,7 @@
 
 export default function Dashboard() {
   return (
-    <main className="flex-1 p-gutter md:p-xl overflow-y-auto">
+    <main className="flex-1 p-gutter overflow-y-auto">
       <div className="max-w-container-max mx-auto space-y-xl">
         <div className="md:hidden mb-lg">
           <h2 className="font-headline-xl-mobile text-headline-xl-mobile font-bold text-primary">

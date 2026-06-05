@@ -3,7 +3,7 @@
 export default function ChatbotSettingsPage() {
   return (
     <main className=" min-h-screen bg-background">
-      <div className="max-w-[container-max] mx-auto px-gutter py-xl">
+      <div className="max-w-[container-max] mx-auto px-gutter py-md">
         <header className="mb-lg">
           <h2 className="font-headline-xl text-headline-xl text-on-surface">
             Chatbot Settings

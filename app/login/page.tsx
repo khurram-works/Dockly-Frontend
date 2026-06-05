@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
@@ -104,7 +104,17 @@ export default function LoginPage() {
     mode: "onTouched",
   });
 
-  const onSubmit = (data: LoginFormData) => {
+  const onSubmit = async (data: LoginFormData) => {
+    const response = await fetch("http://localhost:5000/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+    console.log(result);
     console.log(data);
   };
   return (
@@ -150,22 +160,22 @@ export default function LoginPage() {
               )}
             </div> */}
             <FormField
-                id="email"
-                label="Email"
-                placeholder="cybros@gmail.com"
-                registration={register("email")}
-                error={errors.email}
-              />
-              <FormField
-                id="password"
-                label="Password"
-                placeholder="********"
-                registration={register("password")}
-                error={errors.password}
-                isPassword
-                showPassword={showPassword}
-                onTogglePassword={() => setShowPassword((prev) => !prev)}
-              />
+              id="email"
+              label="Email"
+              placeholder="cybros@gmail.com"
+              registration={register("email")}
+              error={errors.email}
+            />
+            <FormField
+              id="password"
+              label="Password"
+              placeholder="********"
+              registration={register("password")}
+              error={errors.password}
+              isPassword
+              showPassword={showPassword}
+              onTogglePassword={() => setShowPassword((prev) => !prev)}
+            />
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center">

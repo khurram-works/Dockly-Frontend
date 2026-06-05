@@ -10,12 +10,13 @@ import PricingSection from "@/components/landingPage/pricingSection";
 import Footer from "@/components/landingPage/footer";
 
 export default function Home() {
+
   return (
     // The body already has bg-surface and text-on-surface from layout.tsx.
     // We just need min-h-screen flex flex-col so the footer sticks to the bottom
     // even on short pages. That's handled in layout.tsx's body class.
     <>
-      <Header />
+      <Header  />
       {/* 
         pt-[104px] compensates for the fixed header.
         Your Stitch HTML uses exactly pt-[104px] on <main> — we match it precisely.

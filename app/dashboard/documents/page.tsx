@@ -106,7 +106,7 @@ export default function DocumentsPage() {
   const [isDragging, setIsDragging] = useState(false);
 
   return (
-    <div className="p-md lg:p-xl lg:px-12 max-w-container-max mx-auto space-y-xl">
+    <div className="p-md lg:px-12 max-w-container-max mx-auto space-y-xl">
       {/* ── Page header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
