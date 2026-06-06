@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" data-scroll-behavior="smooth" className={inter.variable}>
       <head>
         {/*
           These two link tags are the correct way to load external fonts in Next.js.

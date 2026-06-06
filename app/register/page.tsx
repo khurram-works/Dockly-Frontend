@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { FieldError, UseFormRegisterReturn } from "react-hook-form";
+import { useRouter } from "next/navigation";
 
 // ─────────────────────────────────────────────
 // Local helper component — defined in the same file because it's only
@@ -73,7 +74,7 @@ function FormField({
             className="absolute inset-y-0 right-0 pr-3 flex items-center"
           >
             <span className="material-symbols-outlined text-[20px]">
-              {showPassword ? "visibility_off" : "visibility"}
+              {showPassword ? "visibility" :"visibility_off"}
             </span>
           </button>
         )}
@@ -91,6 +92,7 @@ export default function RegisterPage() {
   // Form state — one useState per field.
   // In a real app you'd use react-hook-form or zod for validation,
   // but for now this is clean and understandable.
+  const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -98,7 +100,7 @@ export default function RegisterPage() {
 
   const registrationSchema = z
     .object({
-      company: z.string().min(1, "Company name is required"),
+      slug: z.string().min(1, "Company name is required"),
 
       name: z.string().min(1, "Full name is required"),
 
@@ -130,7 +132,7 @@ export default function RegisterPage() {
   } = useForm<RegistrationFormData>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
-      company: "",
+      slug: "",
       name: "",
       email: "",
       password: "",
@@ -153,7 +155,10 @@ export default function RegisterPage() {
 
     const result = await response.json();
     console.log(result);
-
+    
+    if(result.success){
+      router.push("/login");
+    }
   };
 
   return (
@@ -343,11 +348,11 @@ export default function RegisterPage() {
             */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-md">
               <FormField
-                id="company"
-                label="Company Name"
-                placeholder="Acme Corp"
-                registration={register("company")}
-                error={errors.company}
+                id="slug"
+                label="Company Slug"
+                placeholder="acme-corp"
+                registration={register("slug")}
+                error={errors.slug}
               />
 
               <FormField

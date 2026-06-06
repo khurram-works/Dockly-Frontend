@@ -66,7 +66,7 @@ function FormField({
             className="absolute inset-y-0 right-0 pr-3 flex items-center"
           >
             <span className="material-symbols-outlined text-[20px]">
-              {showPassword ? "visibility_off" : "visibility"}
+              {showPassword ? "visibility" :"visibility_off"}
             </span>
           </button>
         )}
@@ -78,7 +78,7 @@ function FormField({
 }
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const LoginSchema = z.object({
     email: z.email({ message: "Please enter a valid email address" }),
     password: z
