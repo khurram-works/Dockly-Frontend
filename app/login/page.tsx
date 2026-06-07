@@ -7,6 +7,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { FieldError, UseFormRegisterReturn } from "react-hook-form";
 import { useState } from "react";
+import { loginUser } from "@/api/auth";
+import { useAuthContext } from "@/context/authContext";
+import { useRouter } from "next/navigation";
+import { setSessionMarker } from "@/lib/sessionCookie";
 
 interface FormFieldProps {
   id: string;
@@ -66,7 +70,7 @@ function FormField({
             className="absolute inset-y-0 right-0 pr-3 flex items-center"
           >
             <span className="material-symbols-outlined text-[20px]">
-              {showPassword ? "visibility" :"visibility_off"}
+              {showPassword ? "visibility" : "visibility_off"}
             </span>
           </button>
         )}
@@ -78,6 +82,8 @@ function FormField({
 }
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { setCompany } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
   const LoginSchema = z.object({
     email: z.email({ message: "Please enter a valid email address" }),
@@ -105,17 +111,17 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    const response = await fetch("http://localhost:5000/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-
-    const result = await response.json();
-    console.log(result);
-    console.log(data);
+    try {
+      const response = await loginUser(data);
+      console.log(response);
+      if (response.success) {
+        setCompany(response.company);
+        setSessionMarker();
+        router.push("/dashboard");
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
   return (
     <main className="min-h-screen flex flex-col justify-center items-center p-4">

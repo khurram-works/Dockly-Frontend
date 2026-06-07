@@ -1,7 +1,3 @@
-// app/page.tsx
-// This file is just an orchestrator — it imports and arranges sections.
-// No styles, no logic live here. Think of it as a table of contents.
-
 import Header from "@/components/landingPage/header";
 import HeroSection from "@/components/landingPage/herosection";
 import FeaturesSection from "@/components/landingPage/featureSection";

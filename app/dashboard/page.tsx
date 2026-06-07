@@ -1,6 +1,46 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { dashboardData } from "@/api/auth";
+import { useRouter } from "next/navigation";
+import { clearSessionMarker } from "@/lib/sessionCookie";
+
 export default function Dashboard() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    dashboardData()
+      .then((response) => {
+        if (!cancelled && response.success) {
+          console.log(response);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          clearSessionMarker();
+          router.replace("/login");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  if (loading) {
+    return (
+      <main className="flex-1 p-gutter flex items-center justify-center">
+        <p className="text-on-surface-variant">Loading dashboard...</p>
+      </main>
+    );
+  }
+
   return (
     <main className="flex-1 p-gutter overflow-y-auto">
       <div className="max-w-container-max mx-auto space-y-xl">

@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { AuthGuard } from "@/components/AuthGuard";
+import { useAuthContext } from "@/context/authContext";
 import {
   Drawer,
   DrawerContent,
@@ -31,8 +33,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // usePathname tells us the current URL so we can highlight the active nav item.
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuthContext();
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/login");
+  };
 
   return (
     <div className="min-h-screen bg-background text-on-background">
@@ -105,18 +113,26 @@ export default function DashboardLayout({
             );
           })}
 
-          {/* Settings — pushed to bottom with mt-auto */}
-          <li className="mt-auto">
+          <li className="mt-auto space-y-1 border-t border-outline-variant/20 pt-4">
             <Link
               href="/dashboard/profile"
               className="flex items-center gap-3 text-on-primary-container 
                          hover:bg-surface-variant/10 px-4 py-3 rounded-lg 
-                         transition-colors text-label-md
-                         border-t border-outline-variant/20 pt-4"
+                         transition-colors text-label-md"
             >
               <span className="material-symbols-outlined">settings</span>
               Profile &amp; Settings
             </Link>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex w-full items-center gap-3 text-on-primary-container 
+                         hover:bg-surface-variant/10 px-4 py-3 rounded-lg 
+                         transition-colors text-label-md"
+            >
+              <span className="material-symbols-outlined">logout</span>
+              Sign out
+            </button>
           </li>
         </ul>
       </nav>
@@ -200,19 +216,30 @@ export default function DashboardLayout({
               );
             })}
 
-            {/* Profile & Settings — pushed to bottom */}
-            <li className="mt-auto">
+            <li className="mt-auto space-y-1 border-t border-outline-variant/20 pt-4">
               <Link
                 href="/dashboard/profile"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 text-on-primary-container 
                            hover:bg-surface-variant/10 px-4 py-3 rounded-lg 
-                           transition-colors text-label-md
-                           border-t border-outline-variant/20 pt-4"
+                           transition-colors text-label-md"
               >
                 <span className="material-symbols-outlined">settings</span>
                 Profile &amp; Settings
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  void handleLogout();
+                }}
+                className="flex w-full items-center gap-3 text-on-primary-container 
+                           hover:bg-surface-variant/10 px-4 py-3 rounded-lg 
+                           transition-colors text-label-md"
+              >
+                <span className="material-symbols-outlined">logout</span>
+                Sign out
+              </button>
             </li>
           </ul>
 
@@ -302,7 +329,7 @@ export default function DashboardLayout({
           lg:ml-64 clears the fixed sidebar (256px).
           ══════════════════════════════════════ */}
       <main className="lg:ml-64 mt-16 min-h-[calc(100vh-64px)]">
-        {children}
+        <AuthGuard>{children}</AuthGuard>
       </main>
     </div>
   );

@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { FieldError, UseFormRegisterReturn } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import { registerUser } from "@/api/auth";
 
 // ─────────────────────────────────────────────
 // Local helper component — defined in the same file because it's only
@@ -74,7 +75,7 @@ function FormField({
             className="absolute inset-y-0 right-0 pr-3 flex items-center"
           >
             <span className="material-symbols-outlined text-[20px]">
-              {showPassword ? "visibility" :"visibility_off"}
+              {showPassword ? "visibility" : "visibility_off"}
             </span>
           </button>
         )}
@@ -141,23 +142,18 @@ export default function RegisterPage() {
     mode: "onTouched",
   });
 
-  const onSubmit = async(data: RegistrationFormData) => {
+  const onSubmit = async (data: RegistrationFormData) => {
+    try {
+      const { confirmPassword, ...formData } = data;
 
-     const { confirmPassword, ...formData } = data;
+      const response = await registerUser(formData);
+      console.log(response);
 
-    const response = await fetch("http://localhost:5000/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
-
-    const result = await response.json();
-    console.log(result);
-    
-    if(result.success){
-      router.push("/login");
+      if (response.success) {
+        router.push("/login");
+      }
+    } catch (err) {
+      console.log(err);
     }
   };
 
