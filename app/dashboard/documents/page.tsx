@@ -1,68 +1,67 @@
-// app/dashboard/documents/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { uploadDoc } from "@/api/auth";
+import { getDocuments } from "@/api/auth";
+import { formatDate } from "@/helper/formatdate";
 
-// ── Types ──────────────────────────────────────
-type DocumentStatus = "processed" | "processing" | "failed";
+type DocumentStatus = "PROCESSED" | "PROCESSING" | "FAILED";
 
 interface Document {
   id: string;
-  name: string;
-  size: string;
+  filename: string;
+  fileSize: string;
   status: DocumentStatus;
-  uploadedAt: string;
+  createdAt: string;
 }
 
-// ── Static data — replace with API call later ──
-const documents: Document[] = [
-  {
-    id: "1",
-    name: "ReturnPolicy.pdf",
-    size: "2.4 MB",
-    status: "processed",
-    uploadedAt: "Jan 15, 2025",
-  },
-  {
-    id: "2",
-    name: "ShippingPolicy.pdf",
-    size: "1.8 MB",
-    status: "processed",
-    uploadedAt: "Jan 14, 2025",
-  },
-  {
-    id: "3",
-    name: "Warranty.pdf",
-    size: "3.1 MB",
-    status: "processed",
-    uploadedAt: "Jan 13, 2025",
-  },
-  {
-    id: "4",
-    name: "FAQ.pdf",
-    size: "0.9 MB",
-    status: "processing",
-    uploadedAt: "Jan 16, 2025",
-  },
-  {
-    id: "5",
-    name: "ProductCatalog.pdf",
-    size: "5.2 MB",
-    status: "failed",
-    uploadedAt: "Jan 12, 2025",
-  },
-];
+// const documents: Document[] = [
+//   {
+//     id: "1",
+//     filename: "ReturnPolicy.pdf",
+//     filesize: "2.4 MB",
+//     status: "processed",
+//     uploadedAt: "Jan 15, 2025",
+//   },
+//   {
+//     id: "2",
+//     name: "ShippingPolicy.pdf",
+//     size: "1.8 MB",
+//     status: "processed",
+//     uploadedAt: "Jan 14, 2025",
+//   },
+//   {
+//     id: "3",
+//     name: "Warranty.pdf",
+//     size: "3.1 MB",
+//     status: "processed",
+//     uploadedAt: "Jan 13, 2025",
+//   },
+//   {
+//     id: "4",
+//     name: "FAQ.pdf",
+//     size: "0.9 MB",
+//     status: "processing",
+//     uploadedAt: "Jan 16, 2025",
+//   },
+//   {
+//     id: "5",
+//     name: "ProductCatalog.pdf",
+//     size: "5.2 MB",
+//     status: "failed",
+//     uploadedAt: "Jan 12, 2025",
+//   },
+// ];
 
-// ── Status badge config — one place to change colors ──
 const statusConfig = {
-  processed: {
-    label: "Processed",
+  PROCESSED: {
+    label: "processed",
     className: "bg-[#059669]/10 text-[#059669] border border-[#059669]/20",
     dot: <span className="w-1.5 h-1.5 rounded-full bg-[#059669]" />,
   },
-  processing: {
-    label: "Processing",
+  PROCESSING: {
+    label: "processing",
     className: "bg-secondary/10 text-secondary border border-secondary/20",
     dot: (
       <span className="material-symbols-outlined text-[14px] animate-spin-slow">
@@ -70,14 +69,13 @@ const statusConfig = {
       </span>
     ),
   },
-  failed: {
-    label: "Failed",
+  FAILED: {
+    label: "failed",
     className: "bg-error/10 text-error border border-error/20",
     dot: <span className="w-1.5 h-1.5 rounded-full bg-error" />,
   },
 };
 
-// Pipeline steps data
 const pipelineSteps = [
   {
     icon: "upload_file",
@@ -104,10 +102,68 @@ const pipelineSteps = [
 
 export default function DocumentsPage() {
   const [isDragging, setIsDragging] = useState(false);
+  const [isUpLoading, setIsUpLoading] = useState(false);
+  const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [documents, setDocuments] = useState<Document[]>([]);
+
+  const uploadDocument = async (file: File) => {
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const response = await uploadDoc(fd);
+      console.log(response);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const uploadFile = async (file: File) => {
+    if (file.type != "application/pdf") {
+      setError("Only PDF files are allowed");
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      setError("File too large. Maximum size is 50MB");
+      return;
+    }
+
+    setError("");
+    setIsUpLoading(true);
+
+    try {
+      await uploadDocument(file);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsUpLoading(false);
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      uploadFile(files[0] as File);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getDocuments();
+        setDocuments(data.documents);
+      } catch (err) {
+        console.log(err);
+        // navigate("/login");
+      } finally {
+        // setLoading(false);
+      }
+    })();
+  }, []);
 
   return (
     <div className="p-md lg:px-12 max-w-container-max mx-auto space-y-xl">
-      {/* ── Page header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-headline-xl-mobile md:text-headline-xl font-bold text-on-background">
@@ -118,6 +174,7 @@ export default function DocumentsPage() {
           </p>
         </div>
         <Button
+          onClick={() => fileInputRef.current?.click()}
           className=" transition-colors px-6 py-3 rounded-lg
                            flex items-center justify-center gap-2 shadow-sm font-semibold group"
         >
@@ -128,7 +185,6 @@ export default function DocumentsPage() {
         </Button>
       </div>
 
-      {/* ── Stats pills ── */}
       <div className="flex flex-wrap items-center gap-3">
         {[
           { icon: "folder", label: "12 Total", bg: "bg-surface-container" },
@@ -166,11 +222,8 @@ export default function DocumentsPage() {
         ))}
       </div>
 
-      {/* ── Two column layout ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* ── Left: Upload + Table ── */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Upload dropzone */}
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -180,6 +233,10 @@ export default function DocumentsPage() {
             onDrop={(e) => {
               e.preventDefault();
               setIsDragging(false);
+              const files = Array.from(e.dataTransfer.files);
+              if (files.length > 0) {
+                uploadFile(files[0] as File);
+              }
             }}
             className={`
               bg-surface-container-lowest rounded-xl border-2 border-dashed
@@ -192,14 +249,28 @@ export default function DocumentsPage() {
               }
             `}
           >
-            <div
-              className="w-16 h-16 bg-secondary-fixed rounded-full flex items-center 
+            {isUpLoading ? (
+              <h3 className="text-headline-md text-on-background mb-2">
+                Uploading...
+              </h3>
+            ) : (
+              <div
+                className="w-16 h-16 bg-secondary-fixed rounded-full flex items-center 
                             justify-center mb-4 group-hover:scale-110 transition-transform duration-300"
-            >
-              <span className="material-symbols-outlined text-secondary text-[32px]">
-                cloud_upload
-              </span>
-            </div>
+              >
+                <span className="material-symbols-outlined text-secondary text-[32px]">
+                  cloud_upload
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileInput}
+                  />
+                </span>
+              </div>
+            )}
+            {error && <p className="text-red-500">{error}</p>}
             <h3 className="text-headline-md text-on-background mb-2">
               Drag and drop your PDF files here
             </h3>
@@ -207,8 +278,9 @@ export default function DocumentsPage() {
               Supports PDF files up to 50MB
             </p>
             <button
+              onClick={() => fileInputRef.current?.click()}
               className="text-secondary text-label-md font-semibold hover:underline 
-                               decoration-2 underline-offset-4"
+              decoration-2 underline-offset-4"
             >
               Or browse files
             </button>
@@ -252,7 +324,7 @@ export default function DocumentsPage() {
                 <tbody className="text-body-md divide-y divide-outline-variant/30">
                   {documents.map((doc) => {
                     const status = statusConfig[doc.status];
-                    const isProcessing = doc.status === "processing";
+                    const isProcessing = doc.status === "PROCESSING";
                     return (
                       <tr
                         key={doc.id}
@@ -273,11 +345,11 @@ export default function DocumentsPage() {
                             >
                               picture_as_pdf
                             </span>
-                            {doc.name}
+                            {doc.filename.split("_")[0]+"."+ doc.filename.split(".")[1]}
                           </div>
                         </td>
                         <td className="p-4 text-on-surface-variant text-sm">
-                          {doc.size}
+                          {doc.fileSize}
                         </td>
                         <td className="p-4">
                           <span
@@ -289,10 +361,10 @@ export default function DocumentsPage() {
                           </span>
                         </td>
                         <td className="p-4 text-on-surface-variant text-sm">
-                          {doc.uploadedAt}
+                          {formatDate(doc.createdAt)}
                         </td>
                         <td className="p-4 text-right">
-                          {doc.status === "failed" ? (
+                          {doc.status === "FAILED" ? (
                             <button
                               className="p-1.5 text-on-surface-variant hover:text-secondary 
                                                opacity-0 group-hover:opacity-100 transition-opacity"
@@ -338,18 +410,18 @@ export default function DocumentsPage() {
                   <div
                     key={doc.id}
                     className={`p-4 hover:bg-surface/50 
-                      ${doc.status === "processing" ? "bg-surface-container-low/30" : ""}
+                      ${doc.status === "PROCESSING" ? "bg-surface-container-low/30" : ""}
                     `}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-2 font-medium text-on-background">
                         <span
                           className={`material-symbols-outlined text-[20px] 
-                          ${doc.status === "processing" ? "text-outline" : "text-error"}`}
+                          ${doc.status === "PROCESSING" ? "text-outline" : "text-error"}`}
                         >
                           picture_as_pdf
                         </span>
-                        {doc.name}
+                        {doc.filename}
                       </div>
                       <button className="text-on-surface-variant">
                         <span className="material-symbols-outlined text-[20px]">
@@ -365,7 +437,8 @@ export default function DocumentsPage() {
                         {status.dot} {status.label}
                       </span>
                       <span>
-                        {doc.size} • {doc.uploadedAt.split(",")[0]}
+                        {doc.fileSize} •{" "}
+                        {formatDate(doc.createdAt).split(",")[0]}
                       </span>
                     </div>
                   </div>

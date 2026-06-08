@@ -13,7 +13,7 @@ async function refreshSession(): Promise<void> {
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
           throw new Error(
-            (data as { error?: string }).error || "Session expired"
+            (data as { error?: string }).error || "Session expired",
           );
         }
       })
@@ -24,10 +24,9 @@ async function refreshSession(): Promise<void> {
   return refreshPromise;
 }
 
-
 export async function publicApiRequest(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
 ) {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
@@ -47,11 +46,22 @@ export async function publicApiRequest(
   return data;
 }
 
+export async function documents(endpoint: string, options: RequestInit = {}) {
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    ...options,
+    credentials: "include"
+  });
 
-export async function apiRequest(
-  endpoint: string,
-  options: RequestInit = {}
-) {
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(data?.error || data?.message || "Request failed");
+  }
+
+  return data;
+}
+
+export async function apiRequest(endpoint: string, options: RequestInit = {}) {
   const makeRequest = () =>
     fetch(`${BASE_URL}${endpoint}`, {
       ...options,

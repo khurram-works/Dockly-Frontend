@@ -1,5 +1,4 @@
-import { apiRequest, publicApiRequest } from "./client";
-
+import { apiRequest, publicApiRequest, documents } from "./client";
 
 interface loginType {
   email: string;
@@ -20,8 +19,7 @@ export async function loginUser(data: loginType) {
   });
 }
 
-
-export async function registerUser(data: registerType){
+export async function registerUser(data: registerType) {
   return publicApiRequest("/register", {
     method: "POST",
     body: JSON.stringify(data),
@@ -43,5 +41,18 @@ export async function dashboardData() {
 export async function logoutUser() {
   return publicApiRequest("/logout", {
     method: "POST",
+  });
+}
+
+export async function uploadDoc(data: FormData) {
+  return documents("/dashboard/documents", {
+    method: "POST",
+    body: data,
+  });
+}
+
+export async function getDocuments() {
+  return apiRequest("/dashboard/documents", {
+    method: "GET"
   });
 }
