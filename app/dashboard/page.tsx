@@ -4,34 +4,42 @@ import { useEffect, useState } from "react";
 import { dashboardData } from "@/api/auth";
 import { useRouter } from "next/navigation";
 import { clearSessionMarker } from "@/lib/sessionCookie";
+import Link from "next/link";
 
 export default function Dashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [dashData, setDashData] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
+  let cancelled = false;
 
-    dashboardData()
-      .then((response) => {
-        if (!cancelled && response.success) {
-          console.log(response);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          clearSessionMarker();
-          router.replace("/login");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+  const fetchDashboardData = async () => {
+    try {
+      const response = await dashboardData();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [router]);
+      if (!cancelled && response.success) {
+        console.log(response);
+        setDashData(response.chatbotUrl);
+      }
+    } catch (error) {
+      if (!cancelled) {
+        clearSessionMarker();
+        router.replace("/login");
+      }
+    } finally {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }
+  };
+
+  fetchDashboardData();
+
+  return () => {
+    cancelled = true;
+  };
+}, [router]);
 
   if (loading) {
     return (
@@ -215,6 +223,14 @@ export default function Dashboard() {
                 </span>
                 Copy Chatbot Link
               </button>
+              <Link
+              href={dashData}
+               className="w-full py-3 px-4 bg-transparent border border-outline-variant text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors flex items-center justify-center gap-2 mt-auto">
+                <span className="material-symbols-outlined text-[20px]">
+                  insert_link
+                </span>
+                {dashData}
+              </Link>
               <button className="w-full py-3 px-4 bg-transparent border border-outline-variant border-dashed text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors flex items-center justify-center gap-2 mt-auto">
                 <span className="material-symbols-outlined text-[20px]">
                   insights

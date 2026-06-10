@@ -56,3 +56,21 @@ export async function getDocuments() {
     method: "GET"
   });
 }
+
+export async function deleteDoc(documentId: string){
+  return apiRequest(`/dashboard/${documentId}/delete`,{
+    method: "DELETE"
+  })
+}
+
+export async function reprocessDoc(documentId: string){
+  return apiRequest( `/dashboard/${documentId}/reprocess`,{
+    method: "POST"
+  })
+}
+
+export async function comp_chatbot_info(slug: string){
+  return publicApiRequest(`/chat/${slug}`,{
+    method: "GET"
+  })
+}

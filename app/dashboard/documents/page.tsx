@@ -3,8 +3,9 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { uploadDoc } from "@/api/auth";
-import { getDocuments } from "@/api/auth";
+import { getDocuments, deleteDoc, reprocessDoc } from "@/api/auth";
 import { formatDate } from "@/helper/formatdate";
+import { toast } from "sonner";
 
 type DocumentStatus = "PROCESSED" | "PROCESSING" | "FAILED";
 
@@ -15,44 +16,6 @@ interface Document {
   status: DocumentStatus;
   createdAt: string;
 }
-
-// const documents: Document[] = [
-//   {
-//     id: "1",
-//     filename: "ReturnPolicy.pdf",
-//     filesize: "2.4 MB",
-//     status: "processed",
-//     uploadedAt: "Jan 15, 2025",
-//   },
-//   {
-//     id: "2",
-//     name: "ShippingPolicy.pdf",
-//     size: "1.8 MB",
-//     status: "processed",
-//     uploadedAt: "Jan 14, 2025",
-//   },
-//   {
-//     id: "3",
-//     name: "Warranty.pdf",
-//     size: "3.1 MB",
-//     status: "processed",
-//     uploadedAt: "Jan 13, 2025",
-//   },
-//   {
-//     id: "4",
-//     name: "FAQ.pdf",
-//     size: "0.9 MB",
-//     status: "processing",
-//     uploadedAt: "Jan 16, 2025",
-//   },
-//   {
-//     id: "5",
-//     name: "ProductCatalog.pdf",
-//     size: "5.2 MB",
-//     status: "failed",
-//     uploadedAt: "Jan 12, 2025",
-//   },
-// ];
 
 const statusConfig = {
   PROCESSED: {
@@ -103,7 +66,7 @@ const pipelineSteps = [
 export default function DocumentsPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [isUpLoading, setIsUpLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [Error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
 
@@ -121,11 +84,13 @@ export default function DocumentsPage() {
   const uploadFile = async (file: File) => {
     if (file.type != "application/pdf") {
       setError("Only PDF files are allowed");
+      toast.error(Error)
       return;
     }
 
     if (file.size > 50 * 1024 * 1024) {
       setError("File too large. Maximum size is 50MB");
+      toast.error(Error)
       return;
     }
 
@@ -148,19 +113,56 @@ export default function DocumentsPage() {
     }
   };
 
-  useEffect(() => {
-    (async () => {
-      try {
+  const reprocess_Doc = async (documentId: string) => {
+    try {
+      const response = await reprocessDoc(documentId);
+      console.log(response);
+      if (response.success) {
+        toast.success(response.message);
         const data = await getDocuments();
         setDocuments(data.documents);
-      } catch (err) {
-        console.log(err);
-        // navigate("/login");
-      } finally {
-        // setLoading(false);
+      }else{
+        alert(response.message)
       }
-    })();
-  }, []);
+    } catch(err) {
+      console.log(err)
+    }
+  };
+
+  const delete_Doc = async(documentId: string)=>{
+    try{
+      const response = await deleteDoc(documentId)
+      console.log(response);
+      if(response.success){
+        toast.success(response.message);
+        const data = await getDocuments();
+        setDocuments(data.documents);
+      }else{
+        toast.error(response.message)
+      }
+    }catch(err){
+      console.log(err)
+      // toast.error(err)
+    }
+  }
+
+  useEffect(() => {
+  let isMounted = true;
+  const fetchDocs = async () => {
+    try {
+      const data = await getDocuments();
+      if (isMounted) {
+        setDocuments(data.documents);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  fetchDocs();
+  return () => {
+    isMounted = false;
+  };
+}, []);
 
   return (
     <div className="p-md lg:px-12 max-w-container-max mx-auto space-y-xl">
@@ -270,7 +272,7 @@ export default function DocumentsPage() {
                 </span>
               </div>
             )}
-            {error && <p className="text-red-500">{error}</p>}
+            {Error && <p className="text-red-500">{Error}</p>}
             <h3 className="text-headline-md text-on-background mb-2">
               Drag and drop your PDF files here
             </h3>
@@ -345,7 +347,9 @@ export default function DocumentsPage() {
                             >
                               picture_as_pdf
                             </span>
-                            {doc.filename.split("_")[0]+"."+ doc.filename.split(".")[1]}
+                            {doc.filename.split("_")[0] +
+                              "." +
+                              doc.filename.split(".")[1]}
                           </div>
                         </td>
                         <td className="p-4 text-on-surface-variant text-sm">
@@ -366,6 +370,7 @@ export default function DocumentsPage() {
                         <td className="p-4 text-right">
                           {doc.status === "FAILED" ? (
                             <button
+                              onClick={()=>reprocess_Doc(doc.id)}
                               className="p-1.5 text-on-surface-variant hover:text-secondary 
                                                opacity-0 group-hover:opacity-100 transition-opacity"
                               title="Retry"
@@ -386,6 +391,7 @@ export default function DocumentsPage() {
                             </button>
                           )}
                           <button
+                            onClick={()=>delete_Doc(doc.id)}
                             className={`p-1.5 text-on-surface-variant hover:text-error 
                                              transition-opacity
                                              ${isProcessing ? "opacity-50 cursor-not-allowed" : "opacity-0 group-hover:opacity-100"}`}

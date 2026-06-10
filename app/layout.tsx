@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/authContext";
+import { Toaster } from "sonner";
+
 
 const inter = Inter({
   subsets: ["latin"],
@@ -53,6 +55,7 @@ export default function RootLayout({
       </head>
       <body className="bg-surface text-on-surface antialiased">
         <AuthProvider>{children}</AuthProvider>
+        <Toaster/>
       </body>
     </html>
   );

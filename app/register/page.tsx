@@ -98,15 +98,18 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   const registrationSchema = z
     .object({
-      slug: z.string().min(1, "Company name is required"),
-
+      slug: z
+        .string()
+        .min(3, "Slug must be at least 3 characters")
+        .max(50, "Slug must be less than 50 characters")
+        .regex(
+          /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+          "Only lowercase letters, numbers, and hyphens allowed. Cannot start or end with a hyphen.",
+        ),
       name: z.string().min(1, "Full name is required"),
-
       email: z.email("Invalid email address"),
-
       password: z
         .string()
         .min(8, "Password must be at least 8 characters")
