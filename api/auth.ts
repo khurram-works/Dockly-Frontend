@@ -1,4 +1,5 @@
 import { apiRequest, publicApiRequest, documents } from "./client";
+const BASE_URL = "http://localhost:5000";
 
 interface loginType {
   email: string;
@@ -73,4 +74,28 @@ export async function comp_chatbot_info(slug: string){
   return publicApiRequest(`/chat/${slug}`,{
     method: "GET"
   })
+}
+
+// Public function — no auth needed, no retry logic
+// Just raw fetch because we need to handle the stream ourselves
+export async function sendChatMessageStream(
+  question: string,
+  companyId: string,
+  sessionId: string,
+  conversationHistory: { role: string; content: string }[]
+): Promise<Response> {
+  // Returns the raw Response object — NOT parsed JSON
+  // Because we need to read the body as a stream
+  const response = await fetch(`${BASE_URL}/chat/message`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      question,
+      companyId,
+      sessionId,
+      conversationHistory
+    })
+  })
+  return response
+  // Caller handles reading the stream
 }

@@ -6,6 +6,7 @@ import { uploadDoc } from "@/api/auth";
 import { getDocuments, deleteDoc, reprocessDoc } from "@/api/auth";
 import { formatDate } from "@/helper/formatdate";
 import { toast } from "sonner";
+import { any } from "zod";
 
 type DocumentStatus = "PROCESSED" | "PROCESSING" | "FAILED";
 
@@ -75,22 +76,27 @@ export default function DocumentsPage() {
       const fd = new FormData();
       fd.append("file", file);
       const response = await uploadDoc(fd);
+      toast.success("Document Uploaded Successfully");
       console.log(response);
-    } catch (err) {
+    } catch (err: any) {
       console.log(err);
+      if (err instanceof TypeError && err.message === "Failed to fetch") {
+        toast.error("Network error. Please check your connection.");
+      } else {
+        toast.error(err.message);
+      }
     }
   };
 
   const uploadFile = async (file: File) => {
     if (file.type != "application/pdf") {
-      setError("Only PDF files are allowed");
-      toast.error(Error)
+      toast.error("Only PDF files are allowed");
       return;
     }
 
     if (file.size > 50 * 1024 * 1024) {
       setError("File too large. Maximum size is 50MB");
-      toast.error(Error)
+      toast.error(Error);
       return;
     }
 
@@ -99,6 +105,16 @@ export default function DocumentsPage() {
 
     try {
       await uploadDocument(file);
+      setTimeout(async () => {
+        try {
+          const data = await getDocuments();
+          setDocuments(data.documents);
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setIsUpLoading(false);
+        }
+      }, 30000);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -121,48 +137,48 @@ export default function DocumentsPage() {
         toast.success(response.message);
         const data = await getDocuments();
         setDocuments(data.documents);
-      }else{
-        alert(response.message)
-      }
-    } catch(err) {
-      console.log(err)
-    }
-  };
-
-  const delete_Doc = async(documentId: string)=>{
-    try{
-      const response = await deleteDoc(documentId)
-      console.log(response);
-      if(response.success){
-        toast.success(response.message);
-        const data = await getDocuments();
-        setDocuments(data.documents);
-      }else{
-        toast.error(response.message)
-      }
-    }catch(err){
-      console.log(err)
-      // toast.error(err)
-    }
-  }
-
-  useEffect(() => {
-  let isMounted = true;
-  const fetchDocs = async () => {
-    try {
-      const data = await getDocuments();
-      if (isMounted) {
-        setDocuments(data.documents);
+      } else {
+        alert(response.message);
       }
     } catch (err) {
       console.log(err);
     }
   };
-  fetchDocs();
-  return () => {
-    isMounted = false;
+
+  const delete_Doc = async (documentId: string) => {
+    try {
+      const response = await deleteDoc(documentId);
+      console.log(response);
+      if (response.success) {
+        toast.success(response.message);
+        const data = await getDocuments();
+        setDocuments(data.documents);
+      } else {
+        toast.error(response.message);
+      }
+    } catch (err) {
+      console.log(err);
+      // toast.error(err)
+    }
   };
-}, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchDocs = async () => {
+      try {
+        const data = await getDocuments();
+        if (isMounted) {
+          setDocuments(data.documents);
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    fetchDocs();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="p-md lg:px-12 max-w-container-max mx-auto space-y-xl">
@@ -189,16 +205,20 @@ export default function DocumentsPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         {[
-          { icon: "folder", label: "12 Total", bg: "bg-surface-container" },
+          {
+            icon: "folder",
+            label: `${documents.length} Total`,
+            bg: "bg-surface-container",
+          },
           {
             icon: "check_circle",
-            label: "10 Processed",
+            label: `${documents.filter((d) => d.status === "PROCESSED").length} Processed`,
             bg: "bg-surface-container-highest",
             iconColor: "text-[#059669]",
           },
           {
             icon: "sync",
-            label: "2 Processing",
+            label: `${documents.filter((d) => d.status === "PROCESSING").length} Processing`,
             bg: "bg-secondary-fixed",
             iconColor: "text-secondary animate-spin-slow",
           },
@@ -262,14 +282,14 @@ export default function DocumentsPage() {
               >
                 <span className="material-symbols-outlined text-secondary text-[32px]">
                   cloud_upload
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    className="hidden"
-                    ref={fileInputRef}
-                    onChange={handleFileInput}
-                  />
                 </span>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileInput}
+                />
               </div>
             )}
             {Error && <p className="text-red-500">{Error}</p>}
@@ -288,9 +308,7 @@ export default function DocumentsPage() {
             </button>
           </div>
 
-          {/* Documents table */}
           <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
-            {/* Table header bar */}
             <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-bright">
               <h3 className="text-on-background font-semibold text-[18px]">
                 Recent Files
@@ -302,7 +320,6 @@ export default function DocumentsPage() {
               </button>
             </div>
 
-            {/* Desktop table — hidden on mobile */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -349,7 +366,7 @@ export default function DocumentsPage() {
                             </span>
                             {doc.filename.split("_")[0] +
                               "." +
-                              doc.filename.split(".")[1]}
+                              doc.filename.split("_")[1]}
                           </div>
                         </td>
                         <td className="p-4 text-on-surface-variant text-sm">
@@ -370,7 +387,7 @@ export default function DocumentsPage() {
                         <td className="p-4 text-right">
                           {doc.status === "FAILED" ? (
                             <button
-                              onClick={()=>reprocess_Doc(doc.id)}
+                              onClick={() => reprocess_Doc(doc.id)}
                               className="p-1.5 text-on-surface-variant hover:text-secondary 
                                                opacity-0 group-hover:opacity-100 transition-opacity"
                               title="Retry"
@@ -391,7 +408,7 @@ export default function DocumentsPage() {
                             </button>
                           )}
                           <button
-                            onClick={()=>delete_Doc(doc.id)}
+                            onClick={() => delete_Doc(doc.id)}
                             className={`p-1.5 text-on-surface-variant hover:text-error 
                                              transition-opacity
                                              ${isProcessing ? "opacity-50 cursor-not-allowed" : "opacity-0 group-hover:opacity-100"}`}

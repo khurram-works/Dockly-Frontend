@@ -1,11 +1,13 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { comp_chatbot_info } from "@/api/auth";
+import { sendChatMessageStream } from "@/api/auth";
 
 interface Chat {
   success: boolean;
+  id: string;
   chatbotName: string;
   welcomeMessage: string;
   slug: string;
@@ -33,11 +35,16 @@ export default function Chatbot({
   const [isLoading, setIsLoading] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const sessionIdRef = useRef<string>("");
 
   const capitalizeFirst = (str?: string) => {
     if (!str) return "";
     return str[0].toUpperCase() + str.slice(1);
   };
+
+
   const fetchDocs = async (slug: string) => {
     try {
       setIsLoading(true);
@@ -48,7 +55,6 @@ export default function Chatbot({
         setBotInfo(data);
       }
     } catch (err: any) {
-      console.log(err);
       setNotFound(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -59,19 +65,146 @@ export default function Chatbot({
     fetchDocs(slug);
   }, [slug]);
 
-  const sendMessage = (text: string)=>{
+
+  useEffect(() => {
+    const key = `dockly_session_${slug}`;
+    const existing = localStorage.getItem(key);
+    if (existing) {
+      sessionIdRef.current = existing;
+    } else {
+      const newId = crypto.randomUUID();
+      localStorage.setItem(key, newId);
+      sessionIdRef.current = newId;
+    }
+  }, []);
+
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+
+  const appendWordToLastMessage = (word: string) => {
+    setMessages((prev) => {
+      const updated = [...prev];
+      const lastMessage = { ...updated[updated.length - 1] };
+      lastMessage.content += word;
+      updated[updated.length - 1] = lastMessage;
+      return updated;
+    });
+  };
+
+
+  const finishStreaming = (sources: Message["sources"]) => {
+    setMessages((prev) => {
+      const updated = [...prev];
+      const lastMessage = { ...updated[updated.length - 1] };
+      lastMessage.isStreaming = false;
+      lastMessage.sources = sources;
+      updated[updated.length - 1] = lastMessage;
+      return updated;
+    });
+  };
+
+
+  const sendMessage = async (text: string) => {
+    if (!text.trim()) return;
+    if (isSending) return;
+    if (!botInfo) return;
+
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: "user",
       content: text,
     };
-    setMessages((prev) => [...prev, userMessage]);
-  }
+    const aiMessage: Message = {
+      id: crypto.randomUUID(),
+      role: "assistant",
+      content: "",
+      isStreaming: true,
+    };
+    setMessages((prev) => [...prev, userMessage, aiMessage]);
+    setInputValue("");
+    setIsSending(true);
+
+
+    const conversationHistory = messages
+      .filter((msg) => !msg.isStreaming)
+      .map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+
+    try {
+      const response = await sendChatMessageStream(
+        text,
+        botInfo.id,
+        sessionIdRef.current,
+        conversationHistory,
+      );
+
+      if (!response.ok) {
+        finishStreaming([]);
+        return;
+      }
+      const reader = response.body!.getReader();
+
+      const decoder = new TextDecoder();
+
+
+      let buffer = "";
+
+      let finalSources: Message["sources"] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+
+
+        const lines = buffer.split("\n\n");
+
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6);
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+
+            if (parsed.type === "chunk") {
+              appendWordToLastMessage(parsed.content);
+            } else if (parsed.type === "sources") {
+              finalSources = parsed.sources;
+            } else if (parsed.type === "error") {
+              appendWordToLastMessage(parsed.content);
+            } else if (parsed.type === "done") {
+              break;
+            }
+          } catch (parseError) {
+            console.error("Failed to parse SSE line:", jsonStr);
+          }
+        }
+      }
+
+      finishStreaming(finalSources);
+    } catch (error) {
+      console.error("Streaming error:", error);
+      finishStreaming([]);
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    sendMessage(inputValue.trim())
-    setInputValue("");
+    sendMessage(inputValue.trim());
   };
 
   if (isLoading) {
@@ -95,7 +228,7 @@ export default function Chatbot({
   }
   return (
     <div className="bg-background text-on-background font-body-md min-h-screen flex flex-col items-center justify-center p-0 md:p-gutter">
-      <div className="w-full h-screen md:h-217 max-w-180 bg-surface-container-lowest flex flex-col md:rounded-2xl md:shadow-[0_20px_25px_-5px_rgba(15,23,42,0.1)] border-0 md:border md:border-outline-variant overflow-hidden shrink-0">
+      <div className="w-full h-screen md:h-screen max-w-180 bg-surface-container-lowest flex flex-col md:rounded-2xl md:shadow-[0_20px_25px_-5px_rgba(15,23,42,0.1)] border-0 md:border md:border-outline-variant overflow-hidden shrink-0">
         <header className="bg-primary-container text-on-primary flex items-center justify-between px-gutter py-md shrink-0">
           <div className="flex items-center gap-sm">
             <div className="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden shrink-0">
@@ -162,13 +295,15 @@ export default function Chatbot({
               </p>
               <div className="flex flex-wrap justify-center gap-sm mt-md">
                 <button
-                onClick={() => sendMessage("What's your privacy policy?")}
-                 className="suggestion-chip px-md py-xs rounded-full border border-secondary text-secondary font-label-md text-label-md hover:bg-secondary hover:text-on-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-1 bg-surface-container-lowest">
+                  onClick={() => sendMessage("What's your privacy policy?")}
+                  className="suggestion-chip px-md py-xs rounded-full border border-secondary text-secondary font-label-md text-label-md hover:bg-secondary hover:text-on-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-1 bg-surface-container-lowest"
+                >
                   What's your privacy policy?
                 </button>
-                <button 
-                onClick={() => sendMessage("Any new changes?")} 
-                className="suggestion-chip px-md py-xs rounded-full border border-secondary text-secondary font-label-md text-label-md hover:bg-secondary hover:text-on-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-1 bg-surface-container-lowest">
+                <button
+                  onClick={() => sendMessage("Any new changes?")}
+                  className="suggestion-chip px-md py-xs rounded-full border border-secondary text-secondary font-label-md text-label-md hover:bg-secondary hover:text-on-secondary transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-1 bg-surface-container-lowest"
+                >
                   Any new changes?
                 </button>
               </div>
@@ -218,6 +353,7 @@ export default function Chatbot({
               ))}
             </div>
           )}
+          <div ref={bottomRef} />
         </main>
 
         <div className="bg-surface-container-lowest border-t border-outline-variant p-md shrink-0 flex flex-col gap-xs">
@@ -230,6 +366,7 @@ export default function Chatbot({
               autoComplete="off"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
+              disabled={isSending}
               className="w-full bg-transparent border-none py-sm pl-md pr-xl font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:ring-0 rounded-xl"
               id="chat-input"
               placeholder="Ask a question..."

@@ -25,23 +25,6 @@ export default function RootLayout({
   return (
     <html lang="en" data-scroll-behavior="smooth" className={inter.variable}>
       <head>
-        {/*
-          These two link tags are the correct way to load external fonts in Next.js.
-          
-          The first one is a "preconnect" — it tells the browser to open a connection
-          to fonts.googleapis.com early, before it even needs the font, so when the
-          actual font request comes, the connection is already established. This speeds
-          up font loading noticeably.
-          
-          The second preconnect is for fonts.gstatic.com — this is where Google actually
-          stores the font FILES. The stylesheet from googleapis.com just references them;
-          the actual bytes come from gstatic.com. The crossOrigin attribute is required
-          here because it's a different domain than your app.
-          
-          The third link is the actual font stylesheet. Notice the URL carefully —
-          this is the correct Material Symbols URL that loads the variable font with
-          all axes (opsz, wght, FILL, GRAD) enabled.
-        */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -55,7 +38,7 @@ export default function RootLayout({
       </head>
       <body className="bg-surface text-on-surface antialiased">
         <AuthProvider>{children}</AuthProvider>
-        <Toaster/>
+        <Toaster position="top-right"/>
       </body>
     </html>
   );
