@@ -137,7 +137,7 @@ export default function LoginPage() {
           Dockly
         </span>
       </div>
-      <div className="w-1/3 bg-surface-container-lowest rounded-xl shadow-[0px_20px_25px_-5px_rgba(15,23,42,0.1)] border border-outline-variant/30 p-8">
+      <div className="w-auto bg-surface-container-lowest rounded-xl shadow-[0px_20px_25px_-5px_rgba(15,23,42,0.1)] border border-outline-variant/30 p-8">
         <div className="text-center mb-8">
           <h1 className="font-headline-md text-headline-md text-on-surface mb-2">
             Welcome back

@@ -5,41 +5,56 @@ import { dashboardData } from "@/api/auth";
 import { useRouter } from "next/navigation";
 import { clearSessionMarker } from "@/lib/sessionCookie";
 import Link from "next/link";
+import { DashData } from "@/types/dashData";
 
 export default function Dashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [dashData, setDashData] = useState("");
+  const [dashData, setDashData] = useState<DashData>({
+    success: false,
+    message: "",
+    TotalDocs: 0,
+    TotalConversations: 0,
+    QuestionsAsked: 0,
+    RecentConversations: [],
+    chatBotName: "",
+    chatBotUrl: "",
+  });
 
   useEffect(() => {
-  let cancelled = false;
+    let cancelled = false;
 
-  const fetchDashboardData = async () => {
-    try {
-      const response = await dashboardData();
+    const fetchDashboardData = async () => {
+      try {
+        const response: DashData = await dashboardData();
+        console.log(response)
 
-      if (!cancelled && response.success) {
-        console.log(response);
-        setDashData(response.chatbotUrl);
+        if (!cancelled && response.success) {
+          setDashData(response);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          clearSessionMarker();
+          router.replace("/login");
+          return;
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    } catch (error) {
-      if (!cancelled) {
-        clearSessionMarker();
-        router.replace("/login");
-      }
-    } finally {
-      if (!cancelled) {
-        setLoading(false);
-      }
-    }
-  };
+    };
 
-  fetchDashboardData();
+    fetchDashboardData();
 
-  return () => {
-    cancelled = true;
-  };
-}, [router]);
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  // useEffect(() => {
+  //   console.log("dashData updated successfully:", dashData);
+  // }, [dashData]);
 
   if (loading) {
     return (
@@ -72,7 +87,7 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="font-headline-xl text-headline-xl text-on-surface">
-              12
+              {dashData?.TotalDocs}
             </p>
           </div>
 
@@ -89,7 +104,7 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="font-headline-xl text-headline-xl text-on-surface">
-              1,284
+              {dashData?.QuestionsAsked}
             </p>
           </div>
 
@@ -106,7 +121,7 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="font-headline-xl text-headline-xl text-on-surface">
-              389
+              {dashData?.TotalConversations}
             </p>
           </div>
 
@@ -122,11 +137,11 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="font-headline-md text-headline-md text-on-surface mt-2 font-medium">
-              Support Bot Alpha
+              Customer {dashData?.chatBotName}
             </p>
-            <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">
+            {/* <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">
               Version 2.4.1
-            </p>
+            </p> */}
           </div>
         </div>
 
@@ -156,17 +171,32 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="font-body-md text-body-md text-on-surface divide-y divide-outline-variant/50">
-                  <tr className="hover:bg-surface-container-low/30 transition-colors">
-                    <td className="p-sm">What is the refund policy?</td>
-                    <td className="p-sm text-on-surface-variant font-label-md text-label-md">
-                      2 min ago
-                    </td>
-                    <td className="p-sm text-right">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                        Answered
-                      </span>
-                    </td>
-                  </tr>
+                  {dashData?.RecentConversations.map((conv) => (
+                    <tr
+                      key={conv.id}
+                      className="hover:bg-surface-container-low/30 transition-colors"
+                    >
+                      <td className="p-sm">{conv.messages?.[0]?.content ?? 'No message'}</td>
+                      <td className="p-sm text-on-surface-variant font-label-md text-label-md">
+                        {new Date(conv.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </td>
+                      <td className="p-sm text-right">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold border ${
+                            conv.isResolved
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                              : "bg-amber-100 text-amber-800 border-amber-200"
+                          }`}
+                        >
+                          {conv.isResolved ? "Answered" : "Escalated"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+
                   <tr className="hover:bg-surface-container-low/30 transition-colors">
                     <td className="p-sm">How do I reset my password?</td>
                     <td className="p-sm text-on-surface-variant font-label-md text-label-md">
@@ -224,12 +254,13 @@ export default function Dashboard() {
                 Copy Chatbot Link
               </button>
               <Link
-              href={dashData}
-               className="w-full py-3 px-4 bg-transparent border border-outline-variant text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors flex items-center justify-center gap-2 mt-auto">
+                href={dashData?.chatBotUrl}
+                className="w-full py-3 px-4 bg-transparent border border-outline-variant text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors flex items-center justify-center gap-2 mt-auto"
+              >
                 <span className="material-symbols-outlined text-[20px]">
                   insert_link
                 </span>
-                {dashData}
+                {dashData?.chatBotUrl}
               </Link>
               <button className="w-full py-3 px-4 bg-transparent border border-outline-variant border-dashed text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors flex items-center justify-center gap-2 mt-auto">
                 <span className="material-symbols-outlined text-[20px]">
