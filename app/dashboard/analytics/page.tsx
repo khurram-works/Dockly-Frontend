@@ -1,9 +1,93 @@
 "use client";
+import { analytics } from "@/api/auth";
+import { useState, useEffect } from "react";
+import { AnalyticsData, AnalyticsResponse } from "@/types/analytics";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  YAxis,
+  XAxis,
+} from "recharts";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+
+const chartConfig = {
+  count: {
+    label: "Conversations",
+    color: "#4F46E5",
+  },
+} satisfies ChartConfig;
+
+const lineChartConfig = {
+  count: {
+    label: "Questions",
+    color: "#4F46E5",
+  },
+} satisfies ChartConfig;
 
 export default function AnalyticsPage() {
+  const [loading, setLoading] = useState(true);
+  const [Analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+
+  const chartData =
+    Analytics?.dayOfWeekDistribution?.map((item) => ({
+      day: item.day,
+      count: Number(item.count),
+    })) ?? [];
+
+  const lineChartData = Analytics?.timeline?.map((item) => ({
+    day: item.date,
+    count: Number(item.count),
+  }));
+
+  const totalDays = lineChartData?.length ?? 0;
+  const xTicks = [0, 4, 9, 14, 19, 24, 29]
+    .filter((i) => i < totalDays)
+    .map((i) => lineChartData![i].day);
+
+  const maxCount = Analytics?.popularQuestions?.[0]?._count?.content ?? 1;
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const response: AnalyticsResponse = await analytics();
+        setAnalytics(response.data);
+        console.log(response);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, []);
+  if (loading) {
+    return (
+      <main className="flex-1 p-gutter flex items-center justify-center">
+        <p className="text-on-surface-variant">Loading Analytics...</p>
+      </main>
+    );
+  }
   return (
     <main className="flex-1 flex flex-col h-full relative overflow-y-auto w-full bg-slate-50">
-
       <div className="p-8 max-w-container-max mx-auto w-full space-y-8 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-low">
@@ -22,7 +106,7 @@ export default function AnalyticsPage() {
             </div>
             <div className="flex items-baseline gap-3">
               <h3 className="text-3xl font-bold text-navy-900 tracking-tight">
-                48
+                {Analytics?.questionsToday}
               </h3>
               <div className="flex items-center gap-1 text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                 <span
@@ -53,7 +137,7 @@ export default function AnalyticsPage() {
             </div>
             <div className="flex items-baseline gap-3">
               <h3 className="text-3xl font-bold text-navy-900 tracking-tight">
-                1,284
+                {Analytics?.questionsThisMonth}
               </h3>
               <div className="flex items-center gap-1 text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                 <span
@@ -84,10 +168,18 @@ export default function AnalyticsPage() {
             </div>
             <div className="flex items-baseline gap-3">
               <h3 className="text-3xl font-bold text-navy-900 tracking-tight">
-                1.2s
+                {Analytics?.avgResponseTime}
               </h3>
               <div className="flex items-center gap-1 text-sm font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                <span>Excellent</span>
+                <span>
+                  {Analytics?.avgResponseTime == null
+                    ? "No data"
+                    : Analytics.avgResponseTime < 2
+                      ? "Excellent"
+                      : Analytics.avgResponseTime < 5
+                        ? "Good"
+                        : "Needs Improvement"}
+                </span>
               </div>
             </div>
             <p className="text-xs text-slate-400 mt-2">Target: &lt; 2.0s</p>
@@ -109,126 +201,93 @@ export default function AnalyticsPage() {
             </div>
             <div className="flex items-baseline gap-3">
               <h3 className="text-3xl font-bold text-navy-900 tracking-tight">
-                12
+                {Analytics?.totalDocs}
               </h3>
             </div>
             <p className="text-sm font-medium text-indigo-600 mt-2">
-              10 active
+              {Analytics?.totalDocs} active
             </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-low overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+        <Card className="bg-white rounded-xl border border-slate-200 shadow-low overflow-hidden">
+          <CardHeader className="p-6 border-b border-slate-100">
             <div>
-              <h3 className="text-lg font-bold text-navy-900">
+              <CardTitle className="text-lg font-bold text-navy-900">
                 Questions Over Time
-              </h3>
-              <p className="text-sm text-slate-500">
+              </CardTitle>
+              <CardDescription className="text-sm text-slate-500">
                 Volume of interactions over the last 30 days
-              </p>
+              </CardDescription>
             </div>
-          </div>
-          <div className="p-6 h-80 relative flex items-end">
-            <svg
-              className="w-full h-full"
-              preserveAspectRatio="none"
-              viewBox="0 0 1000 250"
-            >
-              <defs>
-                <linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1">
-                  <stop
-                    offset="0%"
-                    stopColor="#4F46E5"
-                    stopOpacity="0.2"
-                  ></stop>
-                  <stop
-                    offset="100%"
-                    stopColor="#4F46E5"
-                    stopOpacity="0"
-                  ></stop>
-                </linearGradient>
-              </defs>
-              <line
-                stroke="#F1F5F9"
-                strokeWidth="1"
-                x1="0"
-                x2="1000"
-                y1="50"
-                y2="50"
-              ></line>
-              <line
-                stroke="#F1F5F9"
-                strokeWidth="1"
-                x1="0"
-                x2="1000"
-                y1="100"
-                y2="100"
-              ></line>
-              <line
-                stroke="#F1F5F9"
-                strokeWidth="1"
-                x1="0"
-                x2="1000"
-                y1="150"
-                y2="150"
-              ></line>
-              <line
-                stroke="#F1F5F9"
-                strokeWidth="1"
-                x1="0"
-                x2="1000"
-                y1="200"
-                y2="200"
-              ></line>
-              <path
-                d="M0,200 L0,150 C100,140 200,180 300,120 C400,60 500,140 600,100 C700,60 800,90 900,40 C950,20 980,50 1000,30 L1000,250 L0,250 Z"
-                fill="url(#gradient)"
-              ></path>
-              <path
-                d="M0,150 C100,140 200,180 300,120 C400,60 500,140 600,100 C700,60 800,90 900,40 C950,20 980,50 1000,30"
-                fill="none"
-                stroke="#4F46E5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="3"
-              ></path>
-              <circle
-                cx="300"
-                cy="120"
-                fill="#ffffff"
-                r="4"
-                stroke="#4F46E5"
-                strokeWidth="2"
-              ></circle>
-              <circle
-                cx="600"
-                cy="100"
-                fill="#ffffff"
-                r="4"
-                stroke="#4F46E5"
-                strokeWidth="2"
-              ></circle>
-              <circle
-                cx="900"
-                cy="40"
-                fill="#ffffff"
-                r="4"
-                stroke="#4F46E5"
-                strokeWidth="2"
-              ></circle>
-            </svg>
-            <div className="absolute bottom-2 w-full flex justify-between px-6 text-xs font-medium text-slate-400">
-              <span>Day 1</span>
-              <span>Day 5</span>
-              <span>Day 10</span>
-              <span>Day 15</span>
-              <span>Day 20</span>
-              <span>Day 25</span>
-              <span>Day 30</span>
-            </div>
-          </div>
-        </div>
+          </CardHeader>
+          <CardContent className="p-6 ">
+            <ChartContainer config={lineChartConfig} className="h-64 w-full">
+              <AreaChart
+                data={lineChartData}
+                margin={{ left: 30, right: 30, top: 10, bottom: 0 }}
+              >
+                <defs>
+                  <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#4F46E5" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="#4F46E5" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke="#F1F5F9" />
+                <XAxis
+                  dataKey="day"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  ticks={xTicks}
+                  tickFormatter={(_, index) => {
+                    const dayNumbers = [1, 5, 10, 15, 20, 25, 30];
+                    return `Day ${dayNumbers[index]}`;
+                  }}
+                />
+                <YAxis domain={[0, "auto"]} hide />
+                <ChartTooltip
+                  cursor={false}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const { day, count } = payload[0].payload;
+                    return (
+                      <div className="bg-white border border-slate-200 rounded-lg shadow-md px-3 py-2 text-sm">
+                        <p className="font-semibold text-navy-900">{day}</p>
+                        <p className="text-indigo-600 font-medium">
+                          {count} questions{count !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    );
+                  }}
+                />
+                <Area
+                  dataKey="count"
+                  type="monotone"
+                  stroke="#4F46E5"
+                  strokeWidth={2.5}
+                  fill="url(#colorCount)"
+                  dot={(props) => {
+                    const { cx, cy, payload } = props;
+                    if (payload.count === 0) return <g key={`dot-${cx}`} />;
+                    return (
+                      <circle
+                        key={`dot-${cx}`}
+                        cx={cx}
+                        cy={cy}
+                        r={4}
+                        fill="#4F46E5"
+                        stroke="#fff"
+                        strokeWidth={2}
+                      />
+                    );
+                  }}
+                  activeDot={{ r: 6, fill: "#4F46E5" }}
+                />
+              </AreaChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl border border-slate-200 shadow-low p-6">
@@ -236,146 +295,67 @@ export default function AnalyticsPage() {
               Popular Questions
             </h3>
             <div className="space-y-5">
-              <div>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="font-medium text-navy-900 truncate pr-4">
-                    How to setup?
-                  </span>
-                  <span className="text-slate-500 shrink-0">234</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div
-                    className="bg-indigo-500 h-2 rounded-full"
-                    style={{ width: "100%" }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="font-medium text-navy-900 truncate pr-4">
-                    What is the pricing?
-                  </span>
-                  <span className="text-slate-500 shrink-0">189</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div
-                    className="bg-indigo-500 h-2 rounded-full opacity-80"
-                    style={{ width: "80%" }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="font-medium text-navy-900 truncate pr-4">
-                    How to integrate?
-                  </span>
-                  <span className="text-slate-500 shrink-0">156</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div
-                    className="bg-indigo-500 h-2 rounded-full opacity-60"
-                    style={{ width: "65%" }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="font-medium text-navy-900 truncate pr-4">
-                    Where are docs?
-                  </span>
-                  <span className="text-slate-500 shrink-0">98</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div
-                    className="bg-indigo-500 h-2 rounded-full opacity-40"
-                    style={{ width: "40%" }}
-                  ></div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm mb-1.5">
-                  <span className="font-medium text-navy-900 truncate pr-4">
-                    Contact support
-                  </span>
-                  <span className="text-slate-500 shrink-0">67</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-2">
-                  <div
-                    className="bg-indigo-500 h-2 rounded-full opacity-30"
-                    style={{ width: "25%" }}
-                  ></div>
-                </div>
-              </div>
+              {Analytics?.popularQuestions?.length ? (
+                Analytics.popularQuestions.map((q, i) => {
+                  const count = q._count.content;
+                  const widthPercent = Math.round((count / maxCount) * 100);
+                  return (
+                    <div key={i}>
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="font-medium text-navy-900 truncate pr-4">
+                          {q.content}
+                        </span>
+                        <span className="text-slate-500 shrink-0">{count}</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2">
+                        <div
+                          className="bg-indigo-500 h-2 rounded-full transition-all"
+                          style={{ width: `${widthPercent}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-slate-400">No questions yet.</p>
+              )}
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-low p-6 flex flex-col">
-            <h3 className="text-lg font-bold text-navy-900 mb-6">
-              Conversations by Day
-            </h3>
-            <div className="flex-1 flex items-end justify-between gap-2 h-48 mt-auto pt-8">
-              <div className="flex flex-col items-center gap-2 flex-1 group">
-                <div className="w-full bg-indigo-100 rounded-t-sm h-[40%] group-hover:bg-indigo-200 transition-colors relative">
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-navy-900 text-white text-xs px-2 py-1 rounded transition-opacity">
-                    120
-                  </div>
-                </div>
-                <span className="text-xs font-medium text-slate-500">Mon</span>
-              </div>
-              <div className="flex flex-col items-center gap-2 flex-1 group">
-                <div className="w-full bg-indigo-500 rounded-t-sm h-[85%] group-hover:bg-indigo-600 transition-colors relative">
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-navy-900 text-white text-xs px-2 py-1 rounded transition-opacity">
-                    256
-                  </div>
-                </div>
-                <span className="text-xs font-medium text-slate-800">Tue</span>
-              </div>
-              <div className="flex flex-col items-center gap-2 flex-1 group">
-                <div className="w-full bg-indigo-100 rounded-t-sm h-[60%] group-hover:bg-indigo-200 transition-colors relative">
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-navy-900 text-white text-xs px-2 py-1 rounded transition-opacity">
-                    180
-                  </div>
-                </div>
-                <span className="text-xs font-medium text-slate-500">Wed</span>
-              </div>
-              <div className="flex flex-col items-center gap-2 flex-1 group">
-                <div className="w-full bg-indigo-100 rounded-t-sm h-[75%] group-hover:bg-indigo-200 transition-colors relative">
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-navy-900 text-white text-xs px-2 py-1 rounded transition-opacity">
-                    225
-                  </div>
-                </div>
-                <span className="text-xs font-medium text-slate-500">Thu</span>
-              </div>
-              <div className="flex flex-col items-center gap-2 flex-1 group">
-                <div className="w-full bg-indigo-100 rounded-t-sm h-[50%] group-hover:bg-indigo-200 transition-colors relative">
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-navy-900 text-white text-xs px-2 py-1 rounded transition-opacity">
-                    150
-                  </div>
-                </div>
-                <span className="text-xs font-medium text-slate-500">Fri</span>
-              </div>
-              <div className="flex flex-col items-center gap-2 flex-1 group">
-                <div className="w-full bg-slate-200 rounded-t-sm h-[20%] group-hover:bg-slate-300 transition-colors relative">
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-navy-900 text-white text-xs px-2 py-1 rounded transition-opacity">
-                    60
-                  </div>
-                </div>
-                <span className="text-xs font-medium text-slate-400">Sat</span>
-              </div>
-              <div className="flex flex-col items-center gap-2 flex-1 group">
-                <div className="w-full bg-slate-200 rounded-t-sm h-[15%] group-hover:bg-slate-300 transition-colors relative">
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-navy-900 text-white text-xs px-2 py-1 rounded transition-opacity">
-                    45
-                  </div>
-                </div>
-                <span className="text-xs font-medium text-slate-400">Sun</span>
-              </div>
-            </div>
-          </div>
+          <Card className="bg-white rounded-xl border border-slate-200 shadow-low p-6 flex flex-col">
+            <CardHeader className="text-lg font-bold text-navy-900 mb-6">
+              <CardTitle>Conversations by Day</CardTitle>
+            </CardHeader>
+            <CardContent className="pb-0">
+              <ChartContainer config={chartConfig} className="h-48 w-full">
+                <BarChart
+                  accessibilityLayer
+                  data={chartData}
+                  margin={{ top: 20 }}
+                >
+                  <XAxis
+                    dataKey="day"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                    tickFormatter={(value) => value.slice(0, 3)}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                  />
+                  <Bar dataKey="count" fill="var(--color-count)" radius={8}>
+                    <LabelList
+                      position="top"
+                      offset={12}
+                      className="fill-foreground"
+                      fontSize={12}
+                    />
+                  </Bar>
+                </BarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 shadow-low p-6">

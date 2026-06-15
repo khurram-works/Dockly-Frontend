@@ -7,6 +7,8 @@ import { clearSessionMarker } from "@/lib/sessionCookie";
 import Link from "next/link";
 import { DashData } from "@/types/dashData";
 
+const BASE_URL = "http://localhost:3000";
+
 export default function Dashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         const response: DashData = await dashboardData();
-        console.log(response)
+        console.log(response);
 
         if (!cancelled && response.success) {
           setDashData(response);
@@ -171,17 +173,23 @@ export default function Dashboard() {
                   </tr>
                 </thead>
                 <tbody className="font-body-md text-body-md text-on-surface divide-y divide-outline-variant/50">
-                  {dashData?.RecentConversations.map((conv) => (
+                  {dashData.RecentConversations.map((conv) => (
                     <tr
                       key={conv.id}
                       className="hover:bg-surface-container-low/30 transition-colors"
                     >
-                      <td className="p-sm">{conv.messages?.[0]?.content ?? 'No message'}</td>
+                      <td className="p-sm">
+                        {conv.messages?.[0]?.content ?? "No message"}
+                      </td>
                       <td className="p-sm text-on-surface-variant font-label-md text-label-md">
-                        {new Date(conv.createdAt).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {conv.messages?.[0]?.createdAt
+                          ? new Date(
+                              conv.messages[0].createdAt,
+                            ).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "—"}
                       </td>
                       <td className="p-sm text-right">
                         <span
@@ -196,40 +204,6 @@ export default function Dashboard() {
                       </td>
                     </tr>
                   ))}
-
-                  <tr className="hover:bg-surface-container-low/30 transition-colors">
-                    <td className="p-sm">How do I reset my password?</td>
-                    <td className="p-sm text-on-surface-variant font-label-md text-label-md">
-                      15 min ago
-                    </td>
-                    <td className="p-sm text-right">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                        Answered
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-surface-container-low/30 transition-colors">
-                    <td className="p-sm">Can I integrate with Slack?</td>
-                    <td className="p-sm text-on-surface-variant font-label-md text-label-md">
-                      1 hour ago
-                    </td>
-                    <td className="p-sm text-right">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                        Escalated
-                      </span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-surface-container-low/30 transition-colors">
-                    <td className="p-sm">Pricing for enterprise tier</td>
-                    <td className="p-sm text-on-surface-variant font-label-md text-label-md">
-                      3 hours ago
-                    </td>
-                    <td className="p-sm text-right">
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                        Answered
-                      </span>
-                    </td>
-                  </tr>
                 </tbody>
               </table>
             </div>
@@ -241,12 +215,14 @@ export default function Dashboard() {
               Quick Actions
             </h3>
             <div className="space-y-sm flex-1 flex flex-col relative z-10">
-              <button className="w-full py-3 px-4 bg-secondary bg-linear-to-r from-secondary to-[#585af2] text-on-secondary font-label-md text-label-md rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group">
+              <Link
+               href={`${BASE_URL}/dashboard/documents`}
+               className="w-full py-3 px-4 bg-secondary bg-linear-to-r from-secondary to-[#585af2] text-on-secondary font-label-md text-label-md rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group">
                 <span className="material-symbols-outlined text-[20px] group-hover:-translate-y-1 transition-transform">
                   upload_file
                 </span>
                 Upload Document
-              </button>
+              </Link>
               <button className="w-full py-3 px-4 bg-surface-container-low border border-outline-variant text-on-surface font-label-md text-label-md rounded-lg hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
                   content_copy
@@ -262,12 +238,14 @@ export default function Dashboard() {
                 </span>
                 {dashData?.chatBotUrl}
               </Link>
-              <button className="w-full py-3 px-4 bg-transparent border border-outline-variant border-dashed text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors flex items-center justify-center gap-2 mt-auto">
+              <Link
+              href={`${BASE_URL}/dashboard/analytics`}
+               className="w-full py-3 px-4 bg-transparent border border-outline-variant border-dashed text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors flex items-center justify-center gap-2 mt-auto">
                 <span className="material-symbols-outlined text-[20px]">
                   insights
                 </span>
                 View Detailed Analytics
-              </button>
+              </Link>
             </div>
           </div>
         </div>
