@@ -1,3 +1,22 @@
+interface DocumentActivity {
+  type: 'document';
+  icon: string;
+  text: string;
+  createdAt: string;
+}
+
+interface ConversationActivity {
+  type: 'conversation';
+  icon: string;
+  text: string;
+  createdAt: string;
+}
+
+export type ActivityFeedItem = DocumentActivity | ConversationActivity;
+
+
+
+
 interface TimelineItem {
   date: string;
   count: number;
@@ -28,6 +47,7 @@ export interface AnalyticsData {
   popularQuestions: PopularQuestion[];
 
   dayOfWeekDistribution: DayOfWeekDistribution[];
+  activityFeed: ActivityFeedItem[]
 }
 
 export interface AnalyticsResponse {

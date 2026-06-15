@@ -2,6 +2,7 @@
 import { analytics } from "@/api/auth";
 import { useState, useEffect } from "react";
 import { AnalyticsData, AnalyticsResponse } from "@/types/analytics";
+import { RecentActivityFeed } from "@/components/analyticsDashboard/analyticsActivityFeed";
 import {
   Area,
   AreaChart,
@@ -40,6 +41,8 @@ const lineChartConfig = {
     color: "#4F46E5",
   },
 } satisfies ChartConfig;
+
+
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
@@ -255,7 +258,7 @@ export default function AnalyticsPage() {
                       <div className="bg-white border border-slate-200 rounded-lg shadow-md px-3 py-2 text-sm">
                         <p className="font-semibold text-navy-900">{day}</p>
                         <p className="text-indigo-600 font-medium">
-                          {count} questions{count !== 1 ? "s" : ""}
+                          {count} question{count !== 1 ? "s" : ""}
                         </p>
                       </div>
                     );
@@ -358,8 +361,31 @@ export default function AnalyticsPage() {
           </Card>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-low p-6">
-          <h3 className="text-lg font-bold text-navy-900 mb-6">
+        {Analytics?.activityFeed.length === 0 ? (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-low p-6">
+            <div className="text-center py-8 text-on-surface-variant">
+              <span className="material-symbols-outlined text-[32px] mb-2">
+                history
+              </span>
+              <p>No activity yet</p>
+            </div>
+          </div>
+        ) : (
+          // <div className="bg-white rounded-xl border border-slate-200 shadow-low p-6">
+          //   <h3 className="text-lg font-bold text-navy-900 mb-6">
+          //     Recent Activity Feed
+          //   </h3>
+          //   <div className="relative pl-6 border-l-2 border-slate-100 space-y-8">
+          //     {Analytics?.activityFeed.map(event, index)=>(
+
+          //     )
+
+          //     }
+          //   </div>
+          // </div>
+          <RecentActivityFeed activityFeed={Analytics?.activityFeed ?? []} />
+        )}
+        {/* <h3 className="text-lg font-bold text-navy-900 mb-6">
             Recent Activity Feed
           </h3>
           <div className="relative pl-6 border-l-2 border-slate-100 space-y-8">
@@ -438,8 +464,8 @@ export default function AnalyticsPage() {
                 </span>
               </div>
             </div>
-          </div>
-        </div>
+          </div> */}
+        {/* </div> */}
       </div>
     </main>
   );
