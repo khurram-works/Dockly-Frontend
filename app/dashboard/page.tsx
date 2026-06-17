@@ -6,8 +6,38 @@ import { useRouter } from "next/navigation";
 import { clearSessionMarker } from "@/lib/sessionCookie";
 import Link from "next/link";
 import { DashData } from "@/types/dashData";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  YAxis,
+  XAxis,
+} from "recharts";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 
 const BASE_URL = "http://localhost:3000";
+
+const chartConfig = {
+  count: {
+    label: "Questions",
+    color: "#4F46E5",
+  },
+} satisfies ChartConfig;
 
 export default function Dashboard() {
   const router = useRouter();
@@ -21,6 +51,7 @@ export default function Dashboard() {
     RecentConversations: [],
     chatBotName: "",
     chatBotUrl: "",
+    questionsByDay: [],
   });
 
   useEffect(() => {
@@ -29,7 +60,6 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         const response: DashData = await dashboardData();
-        console.log(response);
 
         if (!cancelled && response.success) {
           setDashData(response);
@@ -54,10 +84,6 @@ export default function Dashboard() {
     };
   }, [router]);
 
-  // useEffect(() => {
-  //   console.log("dashData updated successfully:", dashData);
-  // }, [dashData]);
-
   if (loading) {
     return (
       <main className="flex-1 p-gutter flex items-center justify-center">
@@ -65,6 +91,12 @@ export default function Dashboard() {
       </main>
     );
   }
+
+  const chartData =
+    dashData?.questionsByDay?.map((item) => ({
+      day: item.day,
+      count: Number(item.count),
+    })) ?? [];
 
   return (
     <main className="flex-1 p-gutter overflow-y-auto">
@@ -176,7 +208,7 @@ export default function Dashboard() {
                   {dashData.RecentConversations.map((conv) => (
                     <tr
                       key={conv.id}
-                      className="hover:bg-surface-container-low/30 transition-colors"
+                      className="hover:bg-surface-container-low/30 border-b transition-colors"
                     >
                       <td className="p-sm">
                         {conv.messages?.[0]?.content ?? "No message"}
@@ -216,8 +248,9 @@ export default function Dashboard() {
             </h3>
             <div className="space-y-sm flex-1 flex flex-col relative z-10">
               <Link
-               href={`${BASE_URL}/dashboard/documents`}
-               className="w-full py-3 px-4 bg-secondary bg-linear-to-r from-secondary to-[#585af2] text-on-secondary font-label-md text-label-md rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group">
+                href={`${BASE_URL}/dashboard/documents`}
+                className="w-full py-3 px-4 bg-secondary bg-linear-to-r from-secondary to-[#585af2] text-on-secondary font-label-md text-label-md rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group"
+              >
                 <span className="material-symbols-outlined text-[20px] group-hover:-translate-y-1 transition-transform">
                   upload_file
                 </span>
@@ -239,8 +272,9 @@ export default function Dashboard() {
                 {dashData?.chatBotUrl}
               </Link>
               <Link
-              href={`${BASE_URL}/dashboard/analytics`}
-               className="w-full py-3 px-4 bg-transparent border border-outline-variant border-dashed text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors flex items-center justify-center gap-2 mt-auto">
+                href={`${BASE_URL}/dashboard/analytics`}
+                className="w-full py-3 px-4 bg-transparent border border-outline-variant border-dashed text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors flex items-center justify-center gap-2 mt-auto"
+              >
                 <span className="material-symbols-outlined text-[20px]">
                   insights
                 </span>
@@ -250,21 +284,50 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-md">
-          <div className="flex justify-between items-center mb-lg border-b border-outline-variant pb-sm">
-            <h3 className="font-headline-md text-headline-md text-on-surface">
+        <Card className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-md">
+          <CardHeader className="flex justify-between items-center mb-lg border-b border-outline-variant pb-sm">
+            <CardTitle className="font-headline-md text-headline-md text-on-surface">
               Questions This Week
-            </h3>
+            </CardTitle>
             <div className="flex gap-2">
               <span className="inline-block w-3 h-3 rounded-sm bg-secondary mt-1"></span>
               <span className="font-label-sm text-label-sm text-on-surface-variant">
                 Total Volume
               </span>
             </div>
-          </div>
+          </CardHeader>
 
-          <div className="h-64 flex items-end justify-between gap-2 sm:gap-4 mt-8 relative">
-            <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-between text-[10px] text-on-surface-variant opacity-50 -ml-2">
+          <CardContent className="h-64
+          //  flex items-end justify-between gap-2 sm:gap-4 mt-8 relative
+           ">
+            <ChartContainer config={chartConfig} className="h-48 w-full">
+              <BarChart
+                accessibilityLayer
+                data={chartData}
+                margin={{ top: 20 }}
+              >
+                <XAxis
+                  dataKey="day"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                  tickFormatter={(value) => value.slice(0, 3)}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
+                <Bar dataKey="count" fill="var(--color-count)" radius={8}>
+                  <LabelList
+                    position="top"
+                    offset={12}
+                    className="fill-foreground"
+                    fontSize={12}
+                  />
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+            {/* <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-between text-[10px] text-on-surface-variant opacity-50 -ml-2">
               <span>400</span>
               <span>300</span>
               <span>200</span>
@@ -356,9 +419,9 @@ export default function Dashboard() {
                   Sun
                 </span>
               </div>
-            </div>
-          </div>
-        </div>
+            </div> */}
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

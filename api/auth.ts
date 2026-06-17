@@ -101,3 +101,16 @@ export async function analytics(){
     method: "GET"
   })
 }
+
+export async function conversations(){
+  return apiRequest("/dashboard/conversations",{
+    method: "GET"
+  })
+}
+
+export async function conversationDetail(id: string){
+  return apiRequest(`/dashboard/conversations/${id}`,{
+    method: "GET"
+  })
+}
+

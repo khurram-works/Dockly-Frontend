@@ -17,7 +17,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -42,29 +41,9 @@ const lineChartConfig = {
   },
 } satisfies ChartConfig;
 
-
-
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [Analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-
-  const chartData =
-    Analytics?.dayOfWeekDistribution?.map((item) => ({
-      day: item.day,
-      count: Number(item.count),
-    })) ?? [];
-
-  const lineChartData = Analytics?.timeline?.map((item) => ({
-    day: item.date,
-    count: Number(item.count),
-  }));
-
-  const totalDays = lineChartData?.length ?? 0;
-  const xTicks = [0, 4, 9, 14, 19, 24, 29]
-    .filter((i) => i < totalDays)
-    .map((i) => lineChartData![i].day);
-
-  const maxCount = Analytics?.popularQuestions?.[0]?._count?.content ?? 1;
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -72,7 +51,6 @@ export default function AnalyticsPage() {
         setLoading(true);
         const response: AnalyticsResponse = await analytics();
         setAnalytics(response.data);
-        console.log(response);
       } catch (err) {
         console.log(err);
       } finally {
@@ -82,6 +60,7 @@ export default function AnalyticsPage() {
 
     fetchAnalytics();
   }, []);
+  
   if (loading) {
     return (
       <main className="flex-1 p-gutter flex items-center justify-center">
@@ -89,6 +68,27 @@ export default function AnalyticsPage() {
       </main>
     );
   }
+
+  const chartData =
+    Analytics?.dayOfWeekDistribution?.map((item) => ({
+      day: item.day,
+      count: Number(item.count),
+    })) ?? [];
+
+  const lineChartData =
+    Analytics?.timeline?.map((item) => ({
+      day: item.date,
+      count: Number(item.count),
+    })) ?? [];
+
+  const totalDays = lineChartData.length;
+
+  const xTicks = [0, 4, 9, 14, 19, 24, 29]
+    .filter((i) => i < totalDays && lineChartData[i])
+    .map((i) => lineChartData[i].day);
+
+  const maxCount = Analytics?.popularQuestions?.[0]?._count?.content ?? 1;
+
   return (
     <main className="flex-1 flex flex-col h-full relative overflow-y-auto w-full bg-slate-50">
       <div className="p-8 max-w-container-max mx-auto w-full space-y-8 pb-20">
@@ -220,7 +220,7 @@ export default function AnalyticsPage() {
                 Questions Over Time
               </CardTitle>
               <CardDescription className="text-sm text-slate-500">
-                Volume of interactions over the last 30 days
+                Volume of interactions within this month
               </CardDescription>
             </div>
           </CardHeader>
@@ -361,7 +361,7 @@ export default function AnalyticsPage() {
           </Card>
         </div>
 
-        {Analytics?.activityFeed.length === 0 ? (
+        {Analytics?.activityFeed?.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 shadow-low p-6">
             <div className="text-center py-8 text-on-surface-variant">
               <span className="material-symbols-outlined text-[32px] mb-2">
@@ -371,101 +371,8 @@ export default function AnalyticsPage() {
             </div>
           </div>
         ) : (
-          // <div className="bg-white rounded-xl border border-slate-200 shadow-low p-6">
-          //   <h3 className="text-lg font-bold text-navy-900 mb-6">
-          //     Recent Activity Feed
-          //   </h3>
-          //   <div className="relative pl-6 border-l-2 border-slate-100 space-y-8">
-          //     {Analytics?.activityFeed.map(event, index)=>(
-
-          //     )
-
-          //     }
-          //   </div>
-          // </div>
           <RecentActivityFeed activityFeed={Analytics?.activityFeed ?? []} />
         )}
-        {/* <h3 className="text-lg font-bold text-navy-900 mb-6">
-            Recent Activity Feed
-          </h3>
-          <div className="relative pl-6 border-l-2 border-slate-100 space-y-8">
-            <div className="relative">
-              <div className="absolute -left-7.75 top-1 bg-white p-1 rounded-full">
-                <div className="size-3 bg-indigo-500 rounded-full ring-4 ring-indigo-50"></div>
-              </div>
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <p className="text-sm font-medium text-navy-900">
-                    New Document Uploaded
-                  </p>
-                  <p className="text-sm text-slate-500 mt-1">
-                    "Q3 API Documentation v2.pdf" was indexed successfully.
-                  </p>
-                </div>
-                <span className="text-xs font-medium text-slate-400 whitespace-nowrap">
-                  2h ago
-                </span>
-              </div>
-            </div>
-
-            <div className="relative">
-              <div className="absolute -left-7.75 top-1 bg-white p-1 rounded-full">
-                <div className="size-3 bg-slate-300 rounded-full ring-4 ring-slate-50"></div>
-              </div>
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <p className="text-sm font-medium text-navy-900">
-                    Customer Question Answered
-                  </p>
-                  <p className="text-sm text-slate-500 mt-1">
-                    AI successfully answered: "How do I reset my password?"
-                  </p>
-                </div>
-                <span className="text-xs font-medium text-slate-400 whitespace-nowrap">
-                  3h ago
-                </span>
-              </div>
-            </div>
-
-            <div className="relative">
-              <div className="absolute -left-7.75 top-1 bg-white p-1 rounded-full">
-                <div className="size-3 bg-slate-300 rounded-full ring-4 ring-slate-50"></div>
-              </div>
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <p className="text-sm font-medium text-navy-900">
-                    Customer Question Answered
-                  </p>
-                  <p className="text-sm text-slate-500 mt-1">
-                    AI successfully answered: "What are the pricing tiers?"
-                  </p>
-                </div>
-                <span className="text-xs font-medium text-slate-400 whitespace-nowrap">
-                  5h ago
-                </span>
-              </div>
-            </div>
-
-            <div className="relative">
-              <div className="absolute -left-7.75 top-1 bg-white p-1 rounded-full">
-                <div className="size-3 bg-slate-300 rounded-full ring-4 ring-slate-50"></div>
-              </div>
-              <div className="flex justify-between items-start gap-4">
-                <div>
-                  <p className="text-sm font-medium text-navy-900">
-                    Document Updated
-                  </p>
-                  <p className="text-sm text-slate-500 mt-1">
-                    "Getting Started Guide" content was refreshed.
-                  </p>
-                </div>
-                <span className="text-xs font-medium text-slate-400 whitespace-nowrap">
-                  6h ago
-                </span>
-              </div>
-            </div>
-          </div> */}
-        {/* </div> */}
       </div>
     </main>
   );

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 
-// Nav items in an array — adding a new page is one line here.
+
 const navItems = [
   { label: "Dashboard", icon: "dashboard", href: "/dashboard" },
   {
@@ -44,20 +44,11 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-background text-on-background">
-      {/* ══════════════════════════════════════
-          SIDEBAR — fixed left, desktop only
-          ══════════════════════════════════════ */}
-      {/*
-        w-64 = 256px — matches the lg:ml-64 offset on main content.
-        hidden lg:flex — invisible on mobile, shown on desktop.
-        z-50 so it sits above the topbar on desktop.
-      */}
       <nav
         className="bg-primary-container text-secondary border-r border-outline-variant
                       shadow-sm fixed left-0 top-0 h-full w-64
                       flex-col p-md hidden lg:flex z-50"
       >
-        {/* Brand */}
         <div className="flex items-center gap-3 mb-xl px-2">
           <div className="w-auto h-12 rounded-md flex items-center justify-center text-on-secondary">
             <Image
@@ -78,7 +69,7 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        {/* Nav links */}
+
         <ul className="flex flex-col gap-2 grow">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
@@ -137,28 +128,17 @@ export default function DashboardLayout({
         </ul>
       </nav>
 
-      {/* ══════════════════════════════════════
-          MOBILE DRAWER — shadcn controlled mode
-          open/onOpenChange gives us free: overlay click,
-          swipe-to-close, and Escape key handling.
-          DrawerContent renders the panel + overlay automatically.
-          ══════════════════════════════════════ */}
+
       <Drawer
         direction="left"
         open={mobileMenuOpen}
         onOpenChange={setMobileMenuOpen}
       >
-        {/*
-          DrawerContent is the actual sliding panel.
-          We override bg-popover (shadcn default) with our
-          bg-primary-container to match the desktop sidebar.
-          The rest of the classes come from drawer.tsx automatically:
-          inset-y-0 left-0 w-3/4 rounded-r-xl border-r
-        */}
-        <DrawerTitle>Dockly</DrawerTitle>
-        <DrawerContent className="bg-primary-container border-outline-variant p-md flex flex-col">
 
-          {/* Header row: brand + close button */}
+        
+        <DrawerContent className="bg-primary-container border-outline-variant p-md flex flex-col">
+          
+          <DrawerTitle className="hidden">Dockly</DrawerTitle>
           <div className="flex items-center justify-between mb-xl px-2">
             <div className="flex items-center gap-3">
               <div className="w-auto h-12 rounded-md flex items-center justify-center text-on-secondary">
@@ -182,7 +162,7 @@ export default function DashboardLayout({
             </button>
           </div>
 
-          {/* Nav links — identical markup to desktop sidebar */}
+
           <ul className="flex flex-col gap-2 grow">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
@@ -246,26 +226,13 @@ export default function DashboardLayout({
         </DrawerContent>
       </Drawer>
 
-      {/* ══════════════════════════════════════
-          TOPBAR — fixed top, full width minus sidebar
-          ══════════════════════════════════════ */}
-      {/*
-        left-0 lg:left-64: on mobile spans full width,
-        on desktop starts after the sidebar (256px).
-        h-16 = 64px — matches the mt-16 on main content.
-      */}
+
       <header
         className="bg-surface-container-lowest border-b border-outline-variant
                          shadow-sm fixed top-0 right-0 left-0 lg:left-64 z-40
                          flex justify-between items-center px-md py-sm h-16"
       >
-        {/* Left: hamburger (mobile) + search (desktop) */}
         <div className="flex items-center">
-          {/*
-            Mobile hamburger — plain Button, NO DrawerTrigger.
-            We're in controlled mode so we drive open state manually.
-            DrawerTrigger is only needed when Drawer manages its own state.
-          */}
           <Button
             variant="ghost"
             onClick={() => setMobileMenuOpen(true)}
@@ -274,12 +241,10 @@ export default function DashboardLayout({
             <span className="material-symbols-outlined">menu</span>
           </Button>
 
-          {/* Mobile brand name */}
           <span className="lg:hidden text-headline-md font-black text-primary">
             Dockly
           </span>
 
-          {/* Desktop search bar */}
           <div
             className="hidden lg:flex items-center bg-surface-container rounded-full 
                           px-4 py-2 w-64 border border-outline-variant/30 
@@ -296,7 +261,6 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        {/* Right: notifications, help, avatar */}
         <div className="flex items-center gap-2">
           <button
             className="hover:bg-surface-container rounded-full p-2 transition-all 
@@ -311,7 +275,6 @@ export default function DashboardLayout({
             <span className="material-symbols-outlined">help_outline</span>
           </button>
 
-          {/* Avatar */}
           <div
             className="ml-2 w-8 h-8 rounded-full bg-secondary-container 
                           text-on-secondary-container flex items-center justify-center 
@@ -321,14 +284,7 @@ export default function DashboardLayout({
           </div>
         </div>
       </header>
-
-      {/* ══════════════════════════════════════
-          PAGE CONTENT
-          {children} renders whatever page is active.
-          mt-16 clears the fixed topbar (64px).
-          lg:ml-64 clears the fixed sidebar (256px).
-          ══════════════════════════════════════ */}
-      <main className="lg:ml-64 mt-16 min-h-[calc(100vh-64px)]">
+      <main className="lg:ml-64 mt-16 min-h-[calc(100vh-64px)] overflow-y-auto">
         <AuthGuard>{children}</AuthGuard>
       </main>
     </div>

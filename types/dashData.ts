@@ -6,7 +6,8 @@ export interface DashData {
   QuestionsAsked: number;
   RecentConversations: RecentConversations[],
   chatBotName: string,
-  chatBotUrl: string
+  chatBotUrl: string,
+  questionsByDay: QuestionsByDay[]
 }
 
 interface RecentConversations {
@@ -24,4 +25,9 @@ interface Message {
   createdAt: string;
   documentId: string | null;
   id: string;
+}
+
+export interface QuestionsByDay {
+  day: string;
+  count: number;
 }
