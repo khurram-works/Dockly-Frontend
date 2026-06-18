@@ -6,7 +6,6 @@ import { uploadDoc } from "@/api/auth";
 import { getDocuments, deleteDoc, reprocessDoc } from "@/api/auth";
 import { formatDate } from "@/helper/formatdate";
 import { toast } from "sonner";
-import { any } from "zod";
 
 type DocumentStatus = "PROCESSED" | "PROCESSING" | "FAILED";
 

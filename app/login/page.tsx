@@ -76,7 +76,7 @@ function FormField({
         )}
       </div>
 
-      {error && <p className="text-sm text-red-500">{error.message}</p>}
+      {error && <p className="text-sm  text-red-500">{error.message}</p>}
     </div>
   );
 }
@@ -148,23 +148,6 @@ export default function LoginPage() {
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-4">
-            {/* <div>
-              <label className="block font-label-md text-label-md text-on-surface mb-1.5">
-                Email Address
-              </label>
-              <input
-                className="w-full h-11 px-3 bg-surface-bright border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition-colors font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50"
-                id="email"
-                placeholder="name@company.com"
-                type="email"
-                {...register("email")}
-              />
-              {errors.email && (
-                <span className="text-red-500 text-sm mt-1">
-                  {errors.email.message}
-                </span>
-              )}
-            </div> */}
             <FormField
               id="email"
               label="Email"

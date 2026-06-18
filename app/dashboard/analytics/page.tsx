@@ -44,6 +44,7 @@ const lineChartConfig = {
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [Analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [search, setSearch] = useState("")
 
   useEffect(() => {
     const fetchAnalytics = async () => {

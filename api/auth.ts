@@ -13,6 +13,18 @@ interface registerType {
   password: string;
 }
 
+interface Profile{
+  slug: string;
+  name: string;
+  email: string;
+  chatbotName: string
+}
+
+interface passwordSchema{
+  currentPassword: string,
+  password: string
+}
+
 export async function loginUser(data: loginType) {
   return publicApiRequest("/login", {
     method: "POST",
@@ -54,33 +66,33 @@ export async function uploadDoc(data: FormData) {
 
 export async function getDocuments() {
   return apiRequest("/dashboard/documents", {
-    method: "GET"
+    method: "GET",
   });
 }
 
-export async function deleteDoc(documentId: string){
-  return apiRequest(`/dashboard/${documentId}/delete`,{
-    method: "DELETE"
-  })
+export async function deleteDoc(documentId: string) {
+  return apiRequest(`/dashboard/${documentId}/delete`, {
+    method: "DELETE",
+  });
 }
 
-export async function reprocessDoc(documentId: string){
-  return apiRequest( `/dashboard/${documentId}/reprocess`,{
-    method: "POST"
-  })
+export async function reprocessDoc(documentId: string) {
+  return apiRequest(`/dashboard/${documentId}/reprocess`, {
+    method: "POST",
+  });
 }
 
-export async function comp_chatbot_info(slug: string){
-  return publicApiRequest(`/chat/${slug}`,{
-    method: "GET"
-  })
+export async function comp_chatbot_info(slug: string) {
+  return publicApiRequest(`/chat/${slug}`, {
+    method: "GET",
+  });
 }
 
 export async function sendChatMessageStream(
   question: string,
   companyId: string,
   sessionId: string,
-  conversationHistory: { role: string; content: string }[]
+  conversationHistory: { role: string; content: string }[],
 ): Promise<Response> {
   const response = await fetch(`${BASE_URL}/chat/message`, {
     method: "POST",
@@ -89,28 +101,62 @@ export async function sendChatMessageStream(
       question,
       companyId,
       sessionId,
-      conversationHistory
-    })
-  })
-  return response
+      conversationHistory,
+    }),
+  });
+  return response;
 }
 
+export async function analytics() {
+  return apiRequest("/dashboard/analytics", {
+    method: "GET",
+  });
+}
 
-export async function analytics(){
-  return apiRequest("/dashboard/analytics",{
+export async function conversations(
+  page: number,
+  status: string,
+  days: number,
+  search: string,
+) {
+  const params = new URLSearchParams({
+    page: String(page),
+    status,
+    days: String(days),
+    search,
+  });
+
+  return apiRequest(
+    `/dashboard/conversations?${params.toString()}`,
+
+    {
+      method: "GET",
+    },
+  );
+}
+
+export async function conversationDetail(id: string) {
+  return apiRequest(`/dashboard/conversations/${id}`, {
+    method: "GET",
+  });
+}
+
+export async function companyDetails(id: string){
+  return apiRequest(`/dashboard/profile/${id}`,{
     method: "GET"
   })
 }
 
-export async function conversations(){
-  return apiRequest("/dashboard/conversations",{
-    method: "GET"
-  })
+export async function updateCompanyProfile(data: Profile) {
+  return publicApiRequest("/dashboard/profile/update", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
 }
 
-export async function conversationDetail(id: string){
-  return apiRequest(`/dashboard/conversations/${id}`,{
-    method: "GET"
-  })
+export async function updatePassword(data: passwordSchema){
+  return publicApiRequest("/dashboard/profile/password", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
 }
-

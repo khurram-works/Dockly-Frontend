@@ -2,14 +2,14 @@ interface DocumentActivity {
   type: 'document';
   icon: string;
   text: string;
-  createdAt: string;
+  updatedAt: string;
 }
 
 interface ConversationActivity {
   type: 'conversation';
   icon: string;
   text: string;
-  createdAt: string;
+  updatedAt: string;
 }
 
 export type ActivityFeedItem = DocumentActivity | ConversationActivity;

@@ -1,11 +1,186 @@
 "use client";
-import {useState} from "react";
+import { useState, useEffect } from "react";
+import { companyDetails } from "@/api/auth";
+import { CompanyResponse } from "@/types/companyProfile";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { updatePassword, updateCompanyProfile } from "@/api/auth";
+
+interface Company {
+  id: string;
+  name: string;
+}
 
 export default function ProfilePage() {
-  const [email, setEmail] = useState("john.doe@nike.com");
-  const [company, setCompany] = useState("Nike");
-  const [fullName, setFullName] = useState("John Doe"); 
-  const [website, setWebsite] = useState("https://nike.com");
+  const [id, setId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [companyData, setCompanyData] = useState<CompanyResponse | null>(null);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const profileSchema = z.object({
+    slug: z
+      .string()
+      .min(3, "Slug must be at least 3 characters")
+      .max(50, "Slug must be less than 50 characters")
+      .regex(
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        "Only lowercase letters, numbers, and hyphens allowed. Cannot start or end with a hyphen.",
+      ),
+    name: z.string().min(1, "Full name is required"),
+    email: z.email("Invalid email address"),
+    chatbotName: z.string().min(8, "Chatbot Name must be 8 characters long."),
+  });
+
+  const passwordSchema = z
+    .object({
+      currentPassword: z.string().min(8, "Current password is required"),
+
+      password: z
+        .string()
+        .min(8, "Password must be at least 8 characters")
+        .regex(
+          /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/,
+          "Password must contain uppercase, lowercase, number and special character",
+        ),
+
+      confirmPassword: z
+        .string()
+        .min(8, "Confirm password must be at least 8 characters"),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords do not match",
+      path: ["confirmPassword"],
+    });
+
+  type ProfileSchema = z.infer<typeof profileSchema>;
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting, isDirty, isValid },
+    reset,
+  } = useForm<ProfileSchema>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      slug: "",
+      name: "",
+      email: "",
+      chatbotName: "",
+    },
+    mode: "onSubmit",
+  });
+
+  type PasswordSchema = z.infer<typeof passwordSchema>;
+
+  const passwordForm = useForm<PasswordSchema>({
+    resolver: zodResolver(passwordSchema),
+    mode: "onSubmit",
+  });
+
+  const {
+    register: passwordRegister,
+    handleSubmit: handlePasswordSubmit,
+    formState: { errors: passwordErrors },
+    reset: passwordReset
+  } = passwordForm;
+
+  useEffect(() => {
+    const store = localStorage.getItem("company");
+
+    if (store) {
+      const company = JSON.parse(store);
+
+      setId(company.id);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      try {
+        setLoading(true);
+        const response = await companyDetails(id);
+        setCompanyData(response);
+        console.log(response);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [id]);
+
+  useEffect(() => {
+    if (companyData) {
+      reset({
+        slug: companyData.company.slug,
+        name: companyData.company.name,
+        email: companyData.company.email,
+        chatbotName: companyData.company.chatbotName,
+      });
+    }
+  }, [companyData, reset]);
+
+  const onsubmit = async (data: ProfileSchema) => {
+    try {
+      console.log(data);
+      const response = await updateCompanyProfile(data);
+      if (response.success) {
+        reset()
+        toast.success("Profile updated successfully");
+      } else {
+        toast.error(response.message);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const onConfirmSave = handleSubmit(onsubmit);
+
+  const onPasswordSubmit = async (data: PasswordSchema) => {
+    console.log(data);
+    try {
+      const { confirmPassword, ...formData } = data;
+      const response = await updatePassword(formData);
+      if (response.success) {
+        passwordReset()
+        toast.success("Password updated successfully");
+      } else {
+        toast.error(response.message);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const onConfirmPasswordSave = handlePasswordSubmit(onPasswordSubmit);
+
+  if (loading) {
+    return (
+      <main className="flex-1 p-gutter flex items-center justify-center">
+        <p className="text-on-surface-variant">Loading Company Details...</p>
+      </main>
+    );
+  }
   return (
     <main className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-background">
       <div className="max-w-container-max mx-auto w-full px-gutter py-lg">
@@ -18,8 +193,8 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter items-start">
-          <div className="lg:col-span-4 flex flex-col gap-gutter">
+        <div className="grid grid-cols-1 gap-gutter items-start">
+          {/* <div className="lg:col-span-4 flex-col gap-gutter hidden">
             <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 shadow-[0px_4px_6px_-1px_rgba(15,23,42,0.05)] p-6 flex flex-col items-center text-center">
               <div className="relative group cursor-pointer mb-6">
                 <div className="w-32 h-32 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-display-lg text-display-lg font-bold shadow-sm transition-transform group-hover:scale-105">
@@ -116,9 +291,12 @@ export default function ProfilePage() {
                 </span>
               </button>
             </div>
-          </div>
+          </div> */}
 
-          <div className="lg:col-span-8 flex flex-col gap-gutter">
+          <form
+            onSubmit={(e) => e.preventDefault()}
+            className="lg:col-span-8 flex flex-col gap-gutter"
+          >
             <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 shadow-[0px_4px_6px_-1px_rgba(15,23,42,0.05)] p-6 md:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <span className="material-symbols-outlined text-secondary bg-secondary/10 p-2 rounded-lg">
@@ -131,14 +309,18 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block font-label-md text-label-md text-on-surface-variant mb-2">
-                    Company Name
+                    Company Slug
                   </label>
                   <input
-                      onChange={(e)=>setCompany(e.target.value)}
                     className="w-full bg-surface rounded-lg border border-outline-variant/50 px-4 py-2.5 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition-all shadow-sm"
                     type="text"
-                    value={company}
+                    {...register("slug")}
                   />
+                  {errors.slug && (
+                    <p className="text-sm text-red-500">
+                      {errors.slug?.message}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -146,11 +328,15 @@ export default function ProfilePage() {
                     Full Name
                   </label>
                   <input
-                    onChange={(e)=>setFullName(e.target.value)}
                     className="w-full bg-surface rounded-lg border border-outline-variant/50 px-4 py-2.5 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition-all shadow-sm"
                     type="text"
-                    value={fullName}
+                    {...register("name")}
                   />
+                  {errors.name && (
+                    <p className="text-sm text-red-500">
+                      {errors.name?.message}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -158,30 +344,66 @@ export default function ProfilePage() {
                     Email Address
                   </label>
                   <input
-                    onChange={(e)=>setEmail(e.target.value)}
                     className="w-full bg-surface rounded-lg border border-outline-variant/50 px-4 py-2.5 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition-all shadow-sm"
                     type="email"
-                    value={email}
+                    {...register("email")}
                   />
+                  {errors.email && (
+                    <p className="text-sm text-red-500">
+                      {errors.email?.message}
+                    </p>
+                  )}
                 </div>
 
                 <div>
                   <label className="block font-label-md text-label-md text-on-surface-variant mb-2">
-                    Company Website
+                    Chatbot Name
                   </label>
                   <input
-                    onChange={(e)=>setWebsite(e.target.value)}
+                    {...register("chatbotName")}
                     className="w-full bg-surface rounded-lg border border-outline-variant/50 px-4 py-2.5 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition-all shadow-sm"
-                    placeholder="https://nike.com"
-                    type="url"
-                    value={website}
                   />
+                  {errors.chatbotName && (
+                    <p className="text-sm text-red-500">
+                      {errors.chatbotName?.message}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="mt-8 flex justify-end">
-                <button className="bg-secondary text-on-secondary font-label-md text-label-md rounded-lg px-6 py-2.5 hover:bg-secondary/90 transition-colors shadow-sm font-semibold">
-                  Save Changes
-                </button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      disabled={!isDirty || !isValid || isSubmitting}
+                      className="text-background font-label-md text-label-md rounded-lg px-6 py-2.5 hover:bg-secondary/90 transition-colors shadow-sm font-semibold"
+                    >
+                      {!isDirty ? "No changes" : "Save Changes"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent
+                    size="sm"
+                    className="bg-background outline-none ring-0 border-none"
+                  >
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Are you sure you want to save these changes?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will update your profile information.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={async () => {
+                          await onConfirmSave();
+                        }}
+                      >
+                        Update
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
 
@@ -200,16 +422,24 @@ export default function ProfilePage() {
                     Current Password
                   </label>
                   <input
-                    
                     className="w-full bg-surface rounded-lg border border-outline-variant/50 px-4 py-2.5 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition-all shadow-sm pr-10"
-                    type="password"
+                    {...passwordRegister("currentPassword")}
+                    type={showCurrentPassword ? "text" : "password"}
                     placeholder="••••••••"
                   />
-                  <button className="absolute right-3 top-9 text-on-surface-variant hover:text-on-surface">
+                  <button
+                    onClick={() => setShowCurrentPassword((prev) => !prev)}
+                    className="absolute right-3 top-9 text-on-surface-variant hover:text-on-surface"
+                  >
                     <span className="material-symbols-outlined text-[20px]">
-                      visibility_off
+                      {showCurrentPassword ? "visibility" : "visibility_off"}
                     </span>
                   </button>
+                  {passwordErrors.currentPassword && (
+                    <p className="text-sm text-red-500">
+                      {passwordErrors.currentPassword.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="relative">
@@ -219,28 +449,22 @@ export default function ProfilePage() {
                   <input
                     className="w-full bg-surface rounded-lg border border-outline-variant/50 px-4 py-2.5 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition-all shadow-sm pr-10"
                     placeholder="Enter new password"
-                    type="password"
+                    {...passwordRegister("password")}
+                    type={showNewPassword ? "text" : "password"}
                   />
-                  <button className="absolute right-3 top-9 text-on-surface-variant hover:text-on-surface">
+                  <button
+                    onClick={() => setShowNewPassword((prev) => !prev)}
+                    className="absolute right-3 top-9 text-on-surface-variant hover:text-on-surface"
+                  >
                     <span className="material-symbols-outlined text-[20px]">
-                      visibility
+                      {showNewPassword ? "visibility" : "visibility_off"}
                     </span>
                   </button>
-                </div>
-
-                <div className="pt-1 pb-2">
-                  <div className="flex justify-between font-label-sm text-label-sm mb-1.5">
-                    <span className="text-on-surface-variant">
-                      Password strength
-                    </span>
-                    <span className="text-secondary font-semibold">Good</span>
-                  </div>
-                  <div className="flex gap-1 h-1.5 w-full">
-                    <div className="flex-1 bg-secondary rounded-l-full"></div>
-                    <div className="flex-1 bg-secondary"></div>
-                    <div className="flex-1 bg-secondary"></div>
-                    <div className="flex-1 bg-surface-variant rounded-r-full"></div>
-                  </div>
+                  {passwordErrors.password && (
+                    <p className="text-sm text-red-500">
+                      {passwordErrors.password.message}
+                    </p>
+                  )}
                 </div>
 
                 <div className="relative">
@@ -250,23 +474,59 @@ export default function ProfilePage() {
                   <input
                     className="w-full bg-surface rounded-lg border border-outline-variant/50 px-4 py-2.5 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-secondary focus:border-secondary transition-all shadow-sm pr-10"
                     placeholder="Confirm new password"
-                    type="password"
+                    {...passwordRegister("confirmPassword")}
+                    type={showConfirmPassword ? "text" : "password"}
                   />
-                  <button className="absolute right-3 top-9 text-on-surface-variant hover:text-on-surface">
+                  <button
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    className="absolute right-3 top-9 text-on-surface-variant hover:text-on-surface"
+                  >
                     <span className="material-symbols-outlined text-[20px]">
-                      visibility
+                      {showConfirmPassword ? "visibility" : "visibility_off"}
                     </span>
                   </button>
+                  {passwordErrors.confirmPassword && (
+                    <p className="text-sm text-red-500">
+                      {passwordErrors.confirmPassword.message}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="mt-8">
-                <button className="bg-secondary text-on-secondary font-label-md text-label-md rounded-lg px-6 py-2.5 hover:bg-secondary/90 transition-colors shadow-sm font-semibold">
-                  Update Password
-                </button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button className="bg-secondary text-on-secondary font-label-md text-label-md rounded-lg px-6 py-2.5 hover:bg-secondary/90 transition-colors shadow-sm font-semibold">
+                      Update Password
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent
+                    size="sm"
+                    className="bg-background outline-none ring-0 border-none"
+                  >
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Are you sure you want to update password?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will update your password and it won't be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={async () => {
+                          await onConfirmPasswordSave();
+                        }}
+                      >
+                        Update
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
 
-            <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 shadow-[0px_4px_6px_-1px_rgba(15,23,42,0.05)] p-6 md:p-8">
+            {/* <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 shadow-[0px_4px_6px_-1px_rgba(15,23,42,0.05)] p-6 md:p-8">
               <div className="flex items-center gap-3 mb-6">
                 <span className="material-symbols-outlined text-secondary bg-secondary/10 p-2 rounded-lg">
                   notifications_active
@@ -338,7 +598,7 @@ export default function ProfilePage() {
                   Save Preferences
                 </button>
               </div>
-            </div>
+            </div> */}
 
             <div className="bg-surface-container-lowest rounded-2xl border border-error/30 shadow-[0px_4px_6px_-1px_rgba(15,23,42,0.05)] p-6 md:p-8 relative overflow-hidden">
               <div className="absolute inset-0 bg-error-container/5 pointer-events-none"></div>
@@ -385,7 +645,7 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
-          </div>
+          </form>
         </div>
 
         <div className="h-12"></div>

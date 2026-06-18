@@ -6,23 +6,8 @@ import { useRouter } from "next/navigation";
 import { clearSessionMarker } from "@/lib/sessionCookie";
 import Link from "next/link";
 import { DashData } from "@/types/dashData";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  LabelList,
-  YAxis,
-  XAxis,
-} from "recharts";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Bar, BarChart, LabelList, XAxis } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
@@ -180,40 +165,49 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-md">
-          <div className="lg:col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col h-full">
+          <div className="lg:col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col">
             <div className="p-md border-b border-outline-variant flex justify-between items-center">
               <h3 className="font-headline-md text-headline-md text-on-surface">
                 Recent Conversations
               </h3>
-              <button className="text-secondary font-label-md text-label-md hover:underline">
+
+              <Link
+                href="/dashboard/conversations"
+                className="text-secondary font-label-md text-label-md hover:underline"
+              >
                 View All
-              </button>
+              </Link>
             </div>
+
             <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left border-collapse min-w-125">
+              <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead>
-                  <tr className="border-b border-outline-variant bg-surface-container-low/50">
-                    <th className="p-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-medium">
+                  <tr className="border-b border-outline-variant bg-surface-container-low">
+                    <th className="p-sm font-medium uppercase tracking-wider">
                       Customer Question
                     </th>
-                    <th className="p-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-medium">
+                    <th className="p-sm font-medium uppercase tracking-wider">
                       Time
                     </th>
-                    <th className="p-sm font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-medium text-right">
+                    <th className="p-sm font-medium uppercase tracking-wider text-right">
                       Status
                     </th>
                   </tr>
                 </thead>
-                <tbody className="font-body-md text-body-md text-on-surface divide-y divide-outline-variant/50">
+
+                <tbody className="divide-y divide-outline-variant">
                   {dashData.RecentConversations.map((conv) => (
                     <tr
                       key={conv.id}
-                      className="hover:bg-surface-container-low/30 border-b transition-colors"
+                      className="hover:bg-surface-container-low transition-colors"
                     >
                       <td className="p-sm">
-                        {conv.messages?.[0]?.content ?? "No message"}
+                        <div className="max-w-[350px] truncate">
+                          {conv.messages?.[0]?.content ?? "No message"}
+                        </div>
                       </td>
-                      <td className="p-sm text-on-surface-variant font-label-md text-label-md">
+
+                      <td className="p-sm text-on-surface-variant">
                         {conv.messages?.[0]?.createdAt
                           ? new Date(
                               conv.messages[0].createdAt,
@@ -223,16 +217,19 @@ export default function Dashboard() {
                             })
                           : "—"}
                       </td>
-                      <td className="p-sm text-right">
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold border ${
-                            conv.isResolved
-                              ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                              : "bg-amber-100 text-amber-800 border-amber-200"
-                          }`}
-                        >
-                          {conv.isResolved ? "Answered" : "Escalated"}
-                        </span>
+
+                      <td className="p-sm">
+                        <div className="flex justify-end">
+                          <span
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold border ${
+                              conv.isResolved
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                                : "bg-amber-100 text-amber-800 border-amber-200"
+                            }`}
+                          >
+                            {conv.isResolved ? "Answered" : "Escalated"}
+                          </span>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -248,7 +245,7 @@ export default function Dashboard() {
             </h3>
             <div className="space-y-sm flex-1 flex flex-col relative z-10">
               <Link
-                href={`${BASE_URL}/dashboard/documents`}
+                href={`/dashboard/documents`}
                 className="w-full py-3 px-4 bg-secondary bg-linear-to-r from-secondary to-[#585af2] text-on-secondary font-label-md text-label-md rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group"
               >
                 <span className="material-symbols-outlined text-[20px] group-hover:-translate-y-1 transition-transform">
@@ -297,9 +294,11 @@ export default function Dashboard() {
             </div>
           </CardHeader>
 
-          <CardContent className="h-64
+          <CardContent
+            className="h-64
           //  flex items-end justify-between gap-2 sm:gap-4 mt-8 relative
-           ">
+           "
+          >
             <ChartContainer config={chartConfig} className="h-48 w-full">
               <BarChart
                 accessibilityLayer

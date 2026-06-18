@@ -31,7 +31,7 @@ export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({ activity
 
           return (
             <div 
-              key={event.createdAt + index} 
+              key={event.updatedAt + index} 
               className={`flex row gap-4 ${isLast ? 'pb-0' : 'pb-6'}`}
             >
    
@@ -45,7 +45,7 @@ export const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({ activity
                     {title}
                   </p>
                   <span className="text-xs text-gray-500 shrink-0 ml-4">
-                    {timeAgo(event.createdAt)}
+                    {timeAgo(event.updatedAt)}
                   </span>
                 </div>
                 <p className="text-sm text-gray-600 mt-0.5 wrap-break-words">

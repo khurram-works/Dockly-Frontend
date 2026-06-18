@@ -27,12 +27,10 @@ export interface ConversationsResponse {
   };
 }
 
-// types/conversation.ts
-
 export interface Source {
   documentId: string
   filename: string
-  pages: number[]       // grouped pages array
+  pages: number[]      
 }
 
 export interface Message {

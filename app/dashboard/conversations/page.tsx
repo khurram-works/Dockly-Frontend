@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { timeAgo } from "@/helper/timeAgo";
 import { ConversationsResponse, ConversationRow } from "@/types/conversation";
 import { conversations } from "@/api/auth";
@@ -12,45 +12,109 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
-  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useSearchParams } from "next/navigation";
 
-const statuses = ["ALL", "ANSWERED", "UNANSWERED"];
+const statuses = ["ALL", "ANSWERED", "UNANSWERED"] as const;
 
-const Days = [
-  "30 Days",
-  "25 Days",
-  "20 Days",
-  "15 Days",
-  "10 Days",
-  "5 Days",
-  "1 Day",
-];
+const Days = [30, 25, 20, 15, 10, 5, 1];
 
 export default function ConversationsPage() {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const [data, setData] = useState<ConversationsResponse | null>(null);
-  const [page, setPage] = useState(1);
-  const [Status, setStatus] = useState("ALL");
-  const [day, setDay] = useState("30 Days");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const firstRender = useRef(true);
+  const page = Number(searchParams.get("page")) || 1;
+  const status = searchParams.get("status") || "ALL";
+  const day = Number(searchParams.get("days")) || 30;
+  const search = searchParams.get("search") || "";
+
+  const updateQueryParams = (updates: Record<string, string>) => {
+    const params = new URLSearchParams(searchParams);
+    params.delete("conversation");
+    Object.entries(updates).forEach(([key, value]) => {
+      params.set(key, value);
+    });
+    router.replace(`/dashboard/conversations?${params.toString()}`);
+  };
+
+  const handleStatusChange = (value: string) => {
+    updateQueryParams({
+      status: value,
+      page: "1",
+    });
+  };
+
+  const handleDayChange = (value: number) => {
+    updateQueryParams({
+      days: String(value),
+      page: "1",
+    });
+  };
+
+  const previousPage = () => {
+    updateQueryParams({
+      page: String(page - 1),
+    });
+  };
+
+  const nextPage = () => {
+    updateQueryParams({
+      page: String(page + 1),
+    });
+  };
+
+  const gotoPage = (pageNumber: number) => {
+    updateQueryParams({
+      page: String(pageNumber),
+    });
+  };
+
+  const handleClick = (conversationId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("conversation", conversationId);
+    router.push(`/dashboard/conversations?${params.toString()}`);
+  };
+
+  const [searchInput, setSearchInput] = useState(search);
 
   useEffect(() => {
-    const fetchConversations = async () => {
+    setSearchInput(search);
+  }, [search]);
+
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      updateQueryParams({
+        search: searchInput,
+        page: "1",
+      });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    (async () => {
       try {
         setLoading(true);
-        const response: ConversationsResponse = await conversations();
+
+        const response = await conversations(page, status, day, search);
+
         setData(response);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchConversations();
-  }, []);
+    })();
+  }, [page, status, day, search]);
 
   if (loading) {
     return (
@@ -62,9 +126,7 @@ export default function ConversationsPage() {
 
   const totalPages = data?.data.pagination.totalPages || 1;
   const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
-  const handleClick = (conversationId: string) => {
-    router.push(`?conversation=${conversationId}`);
-  };
+
   return (
     <main className="flex-1 overflow-y-auto bg-background p-8 relative">
       <div className="flex items-center justify-between mb-8">
@@ -103,8 +165,10 @@ export default function ConversationsPage() {
         </div>
       </div>
 
-      <div className="bg-surface-container-lowest border border-outline-variant rounded-lg p-2 mb-6 flex items-center justify-between shadow-sm">
-        <div className="relative w-100">
+      <div
+        className=" bg-surface-container-lowest border rounded-lg p-4 mb-6 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between"
+      >
+        <div className="relative flex-1 min-w-0">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface-variant">
             <span
               className="material-symbols-outlined"
@@ -114,16 +178,18 @@ export default function ConversationsPage() {
             </span>
           </div>
           <input
+            value={searchInput}
             className="block w-full pl-10 pr-3 py-2 border-none bg-transparent text-on-background placeholder-on-surface-variant focus:ring-0 sm:text-sm"
             placeholder="Search conversations or questions..."
             type="text"
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 pr-2">
+        <div className="flex flex-wrap gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button className="flex  bg-background items-center gap-2 px-3 py-1.5  outline-none ring-0 rounded-md hover:bg-surface-container transition-colors text-label-md text-on-surface-variant border border-transparent hover:border-outline-variant">
-                {Status}
+                {status}
                 <span
                   className="material-symbols-outlined"
                   style={{ fontSize: "16px" }}
@@ -137,8 +203,8 @@ export default function ConversationsPage() {
                 {statuses.map((sta, index) => (
                   <DropdownMenuCheckboxItem
                     key={index}
-                    checked={Status === sta}
-                    onCheckedChange={() => setStatus(sta)}
+                    checked={status === sta}
+                    onCheckedChange={() => handleStatusChange(sta)}
                   >
                     {sta}
                   </DropdownMenuCheckboxItem>
@@ -149,7 +215,7 @@ export default function ConversationsPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button className="flex bg-background outline-none ring-0 items-center gap-2 px-3 py-1.5 rounded-md hover:bg-surface-container transition-colors text-label-md text-on-surface-variant border border-transparent hover:border-outline-variant">
-                Last {day}
+                Last {day} Days
                 <span
                   className="material-symbols-outlined"
                   style={{ fontSize: "16px" }}
@@ -164,7 +230,7 @@ export default function ConversationsPage() {
                   <DropdownMenuCheckboxItem
                     key={index}
                     checked={day === sta}
-                    onCheckedChange={() => setDay(sta)}
+                    onCheckedChange={() => handleDayChange(sta)}
                   >
                     {sta}
                   </DropdownMenuCheckboxItem>
@@ -306,7 +372,7 @@ export default function ConversationsPage() {
 
       <div className="flex items-center justify-between text-label-md text-on-surface-variant">
         <button
-          onClick={() => setPage((prev) => prev - 1)}
+          onClick={() => previousPage()}
           disabled={!data?.data.pagination.hasPrevPage}
           className="px-4 py-2 border border-outline-variant rounded-lg bg-surface-container-lowest hover:bg-surface-container transition-colors disabled:opacity-50"
         >
@@ -316,7 +382,7 @@ export default function ConversationsPage() {
           {pages.map((pageNumber) => (
             <button
               key={pageNumber}
-              onClick={() => setPage(pageNumber)}
+              onClick={() => gotoPage(pageNumber)}
               className={`w-8 h-8 flex items-center justify-center rounded-md transition-colors ${
                 page === pageNumber
                   ? "bg-secondary text-on-secondary"
@@ -328,7 +394,7 @@ export default function ConversationsPage() {
           ))}
         </div>
         <button
-          onClick={() => setPage((prev) => prev + 1)}
+          onClick={() => nextPage()}
           disabled={!data?.data.pagination.hasNextPage}
           className="px-4 py-2 border border-outline-variant rounded-lg bg-surface-container-lowest hover:bg-surface-container transition-colors disabled:opacity-50"
         >

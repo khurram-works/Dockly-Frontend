@@ -24,7 +24,7 @@ const navItems = [
   },
   { label: "Conversations", icon: "forum", href: "/dashboard/conversations" },
   { label: "Analytics", icon: "monitoring", href: "/dashboard/analytics" },
-  { label: "Chatbot Settings", icon: "smart_toy", href: "/dashboard/settings" },
+  // { label: "Chatbot Settings", icon: "smart_toy", href: "/dashboard/settings" },
 ];
 
 export default function DashboardLayout({
@@ -245,7 +245,7 @@ export default function DashboardLayout({
             Dockly
           </span>
 
-          <div
+          {/* <div
             className="hidden lg:flex items-center bg-surface-container rounded-full 
                           px-4 py-2 w-64 border border-outline-variant/30 
                           focus-within:ring-2 focus-within:ring-secondary transition-all"
@@ -258,7 +258,7 @@ export default function DashboardLayout({
               placeholder="Search..."
               className="bg-transparent border-none outline-none text-body-md w-full placeholder:text-outline p-0"
             />
-          </div>
+          </div> */}
         </div>
 
         <div className="flex items-center gap-2">
