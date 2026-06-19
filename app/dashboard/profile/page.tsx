@@ -20,10 +20,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { updatePassword, updateCompanyProfile } from "@/api/auth";
 
-interface Company {
-  id: string;
-  name: string;
-}
 
 export default function ProfilePage() {
   const [id, setId] = useState("");

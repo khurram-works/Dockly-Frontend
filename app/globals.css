@@ -1,15 +1,9 @@
-/* ============================================
-   RULE: @import must be ABSOLUTELY FIRST.
-   Before Tailwind, before everything.
-   ============================================ */
-/* Tailwind v4 core — comes after @imports */
 @import "tailwindcss";
 
-/* ============================================
-   LAYER 1: Raw design tokens (your source of truth)
-   These are just CSS variables — no Tailwind involved yet.
-   Every color from your Stitch HTML lives here.
-   ============================================ */
+   html {
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+}
 :root {
   /* --- Surfaces --- */
   --surface: #f8f9ff;
@@ -74,16 +68,7 @@
   --background: #f8f9ff;
   --on-background: #0b1c30;
 
-  /* ============================================
-     SHADCN VARIABLES
-     shadcn components (Button, Card, Badge etc.)
-     look for THESE specific names in HSL format.
-     We point them at YOUR brand values.
-     HSL = Hue Saturation% Lightness% (no #, no hsl())
-     
-     How to convert: #4648d4 → HSL → "243 64% 55%"
-     Use: https://htmlcolors.com/hex-to-hsl
-     ============================================ */
+
   --shadcn-background: 225 100% 99%; /* = your --surface */
   --shadcn-foreground: 215 50% 12%; /* = your --on-surface */
   --shadcn-card: 0 0% 100%;
@@ -106,16 +91,9 @@
   --radius: 0.5rem;
 }
 
-/* ============================================
-   LAYER 2: @theme block
-   This is Tailwind v4's replacement for tailwind.config.ts.
-   
-   THE RULE: In @theme, you define --color-X and Tailwind
-   automatically creates bg-X, text-X, border-X classes for you.
-   Similarly --spacing-X creates p-X, m-X, gap-X etc.
-   ============================================ */
+
 @theme {
-  /* --- Your surface colors → bg-surface, bg-surface-container etc. --- */
+
   --color-surface: var(--surface);
   --color-surface-dim: var(--surface-dim);
   --color-surface-bright: var(--surface-bright);
@@ -142,10 +120,7 @@
   --color-on-primary: var(--on-primary);
   --color-on-primary-container: var(--on-primary-container);
 
-  /* --- Your brand indigo → bg-secondary, text-secondary etc.
-         We use the name "secondary" here so your Stitch classes
-         like bg-secondary work without renaming anything.
-         shadcn gets its own separate variable above. --- */
+
   --color-secondary: var(--brand-secondary);
   --color-secondary-container: var(--brand-secondary-container);
   --color-on-secondary: var(--brand-on-secondary);
@@ -173,17 +148,6 @@
   --color-background: var(--background);
   --color-on-background: var(--on-background);
 
-  /* ============================================
-     Typography
-     --font-size-X creates the text-X class.
-     Notice we also set line-height and letter-spacing
-     as separate variables — Tailwind v4 reads them together.
-     ============================================ */
-
-  /* ============================================
-     Spacing
-     --spacing-X creates p-X, m-X, gap-X, px-X etc.
-     ============================================ */
   --spacing-xs: 0.5rem;
   --spacing-sm: 1rem;
   --spacing-md: 1.5rem;
@@ -191,22 +155,16 @@
   --spacing-xl: 4rem;
   --spacing-gutter: 24px;
 
-  /* ============================================
-     Sizing — for max-w-container-max
-     ============================================ */
   --width-container-max: 1280px;
 
   /* Font families */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* ============================================
-   LAYER 3: Base styles
-   Applied globally to every element.
-   ============================================ */
+
 @layer base {
   * {
-    /* Makes shadcn borders use your border color */
+
     border-color: hsl(var(--shadcn-border));
     box-sizing: border-box;
   }
@@ -219,7 +177,6 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Material Symbols — prevents invisible icon flash on load */
   .material-symbols-outlined {
     font-family: "Material Symbols Outlined";
     font-weight: normal;
@@ -303,7 +260,4 @@
   }
 }
 
-html {
-  scroll-behavior: smooth;
-  /* data-scroll-behavior: smooth */
-}
+

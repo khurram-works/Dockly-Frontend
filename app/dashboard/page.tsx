@@ -15,7 +15,6 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 
-const BASE_URL = "http://localhost:3000";
 
 const chartConfig = {
   count: {
@@ -158,15 +157,12 @@ export default function Dashboard() {
             <p className="font-headline-md text-headline-md text-on-surface mt-2 font-medium">
               Customer {dashData?.chatBotName}
             </p>
-            {/* <p className="font-label-sm text-label-sm text-on-surface-variant mt-1">
-              Version 2.4.1
-            </p> */}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-md">
-          <div className="lg:col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col">
-            <div className="p-md border-b border-outline-variant flex justify-between items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-md items-stretch">
+          <div className="lg:col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm flex flex-col h-full">
+            <div className="p-4 border-b border-outline-variant flex justify-between items-center">
               <h3 className="font-headline-md text-headline-md text-on-surface">
                 Recent Conversations
               </h3>
@@ -178,36 +174,38 @@ export default function Dashboard() {
                 View All
               </Link>
             </div>
-
-            <div className="overflow-x-auto flex-1">
-              <table className="w-full text-left border-collapse min-w-[600px]">
+            <div className="overflow-x-auto flex-1 flex flex-col">
+              <table className="w-full h-full text-left border-collapse min-w-150">
                 <thead>
                   <tr className="border-b border-outline-variant bg-surface-container-low">
-                    <th className="p-sm font-medium uppercase tracking-wider">
+                    <th className="px-4 py-3 font-medium uppercase tracking-wider text-xs text-on-surface-variant">
                       Customer Question
                     </th>
-                    <th className="p-sm font-medium uppercase tracking-wider">
+                    <th className="px-4 py-3 font-medium uppercase tracking-wider text-xs text-on-surface-variant">
                       Time
                     </th>
-                    <th className="p-sm font-medium uppercase tracking-wider text-right">
+                    <th className="px-4 py-3 font-medium uppercase tracking-wider text-xs text-on-surface-variant text-right">
                       Status
                     </th>
                   </tr>
                 </thead>
 
                 <tbody className="divide-y divide-outline-variant">
-                  {dashData.RecentConversations.map((conv) => (
+                  {dashData?.RecentConversations?.slice(0, 4).map((conv) => (
                     <tr
                       key={conv.id}
                       className="hover:bg-surface-container-low transition-colors"
                     >
-                      <td className="p-sm">
-                        <div className="max-w-[350px] truncate">
+                      <td className="px-4 py-3 text-sm text-on-surface">
+                        <div
+                          className="max-w-62.5 truncate"
+                          title={conv.messages?.[0]?.content}
+                        >
                           {conv.messages?.[0]?.content ?? "No message"}
                         </div>
                       </td>
 
-                      <td className="p-sm text-on-surface-variant">
+                      <td className="px-4 py-3 text-sm text-on-surface-variant">
                         {conv.messages?.[0]?.createdAt
                           ? new Date(
                               conv.messages[0].createdAt,
@@ -218,13 +216,13 @@ export default function Dashboard() {
                           : "—"}
                       </td>
 
-                      <td className="p-sm">
+                      <td className="px-4 py-3">
                         <div className="flex justify-end">
                           <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold border ${
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border tracking-wide uppercase ${
                               conv.isResolved
-                                ? "bg-emerald-100 text-emerald-800 border-emerald-200"
-                                : "bg-amber-100 text-amber-800 border-amber-200"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
                             }`}
                           >
                             {conv.isResolved ? "Answered" : "Escalated"}
@@ -238,12 +236,14 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-md flex flex-col h-full relative overflow-hidden">
+          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-4 flex flex-col h-full relative overflow-hidden">
             <div className="absolute -right-12 -top-12 w-40 h-40 bg-linear-to-br from-secondary/10 to-transparent rounded-full blur-2xl"></div>
-            <h3 className="font-headline-md text-headline-md text-on-surface mb-md relative z-10">
+
+            <h3 className="font-headline-md text-headline-md text-on-surface mb-4 relative z-10">
               Quick Actions
             </h3>
-            <div className="space-y-sm flex-1 flex flex-col relative z-10">
+
+            <div className="space-y-3 flex-1 flex flex-col relative z-10">
               <Link
                 href={`/dashboard/documents`}
                 className="w-full py-3 px-4 bg-secondary bg-linear-to-r from-secondary to-[#585af2] text-on-secondary font-label-md text-label-md rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 group"
@@ -253,23 +253,26 @@ export default function Dashboard() {
                 </span>
                 Upload Document
               </Link>
+
               <button className="w-full py-3 px-4 bg-surface-container-low border border-outline-variant text-on-surface font-label-md text-label-md rounded-lg hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
                 <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
                   content_copy
                 </span>
                 Copy Chatbot Link
               </button>
+
               <Link
-                href={dashData?.chatBotUrl}
+                href={dashData?.chatBotUrl || "#"}
                 className="w-full py-3 px-4 bg-transparent border border-outline-variant text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors flex items-center justify-center gap-2 mt-auto"
               >
                 <span className="material-symbols-outlined text-[20px]">
                   insert_link
                 </span>
-                {dashData?.chatBotUrl}
+                {dashData?.chatBotUrl || "No Link Available"}
               </Link>
+
               <Link
-                href={`${BASE_URL}/dashboard/analytics`}
+                href={`/dashboard/analytics`}
                 className="w-full py-3 px-4 bg-transparent border border-outline-variant border-dashed text-on-surface-variant font-label-md text-label-md rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors flex items-center justify-center gap-2 mt-auto"
               >
                 <span className="material-symbols-outlined text-[20px]">
@@ -326,99 +329,6 @@ export default function Dashboard() {
                 </Bar>
               </BarChart>
             </ChartContainer>
-            {/* <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-between text-[10px] text-on-surface-variant opacity-50 -ml-2">
-              <span>400</span>
-              <span>300</span>
-              <span>200</span>
-              <span>100</span>
-              <span>0</span>
-            </div>
-
-            <div className="absolute left-8 right-0 top-0 bottom-6 flex flex-col justify-between pointer-events-none z-0">
-              <div className="border-t border-outline-variant/30 w-full"></div>
-              <div className="border-t border-outline-variant/30 w-full"></div>
-              <div className="border-t border-outline-variant/30 w-full"></div>
-              <div className="border-t border-outline-variant/30 w-full"></div>
-              <div className="border-t border-outline-variant/50 w-full"></div>
-            </div>
-            <div className="w-full flex justify-around items-end h-[calc(100%-24px)] pl-8 z-10">
-              <div className="flex flex-col items-center w-full group">
-                <div className="w-3/4 max-w-10 bg-secondary/80 hover:bg-secondary rounded-t-md h-[40%] transition-all relative">
-                  <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface px-2 py-1 rounded text-xs whitespace-nowrap transition-opacity">
-                    142
-                  </div>
-                </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant mt-2">
-                  Mon
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center w-full group">
-                <div className="w-3/4 max-w-10 bg-secondary/80 hover:bg-secondary rounded-t-md h-[65%] transition-all relative">
-                  <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface px-2 py-1 rounded text-xs whitespace-nowrap transition-opacity">
-                    234
-                  </div>
-                </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant mt-2">
-                  Tue
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center w-full group">
-                <div className="w-3/4 max-w-10 bg-secondary/80 hover:bg-secondary rounded-t-md h-[85%] transition-all relative">
-                  <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface px-2 py-1 rounded text-xs whitespace-nowrap transition-opacity">
-                    312
-                  </div>
-                </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant mt-2">
-                  Wed
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center w-full group">
-                <div className="w-3/4 max-w-10 bg-secondary/80 hover:bg-secondary rounded-t-md h-[50%] transition-all relative">
-                  <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface px-2 py-1 rounded text-xs whitespace-nowrap transition-opacity">
-                    189
-                  </div>
-                </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant mt-2">
-                  Thu
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center w-full group">
-                <div className="w-3/4 max-w-10 bg-secondary/80 hover:bg-secondary rounded-t-md h-[95%] transition-all relative">
-                  <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface px-2 py-1 rounded text-xs whitespace-nowrap transition-opacity">
-                    389
-                  </div>
-                </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant mt-2">
-                  Fri
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center w-full group">
-                <div className="w-3/4 max-w-10 bg-secondary/40 hover:bg-secondary/60 rounded-t-md h-[30%] transition-all relative">
-                  <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface px-2 py-1 rounded text-xs whitespace-nowrap transition-opacity">
-                    95
-                  </div>
-                </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant mt-2">
-                  Sat
-                </span>
-              </div>
-
-              <div className="flex flex-col items-center w-full group">
-                <div className="w-3/4 max-w-10 bg-secondary/40 hover:bg-secondary/60 rounded-t-md h-[20%] transition-all relative">
-                  <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-on-surface text-surface px-2 py-1 rounded text-xs whitespace-nowrap transition-opacity">
-                    64
-                  </div>
-                </div>
-                <span className="font-label-sm text-label-sm text-on-surface-variant mt-2">
-                  Sun
-                </span>
-              </div>
-            </div> */}
           </CardContent>
         </Card>
       </div>

@@ -276,7 +276,6 @@ export default function ConversationsPage() {
               {data?.data.conversations.map((con) => (
                 <tr
                   key={con.id}
-                  // onClick={() => setSelectedConversation(con)}
                   className="border-b border-outline-variant hover:bg-secondary-fixed/30 transition-colors cursor-pointer group bg-surface-container/20"
                 >
                   <td className="py-4 px-4 lg:px-6 font-medium text-on-surface-variant">
@@ -357,8 +356,6 @@ export default function ConversationsPage() {
                   onClick={(e) => {
                     e.stopPropagation();
                     handleClick(con.id);
-
-                    // setSelectedConversation(con);
                   }}
                   className="shrink-0 p-2 rounded-md hover:bg-slate-100 transition-colors"
                 >

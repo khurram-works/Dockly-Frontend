@@ -13,16 +13,16 @@ interface registerType {
   password: string;
 }
 
-interface Profile{
+interface Profile {
   slug: string;
   name: string;
   email: string;
-  chatbotName: string
+  chatbotName: string;
 }
 
-interface passwordSchema{
-  currentPassword: string,
-  password: string
+interface passwordSchema {
+  currentPassword: string;
+  password: string;
 }
 
 export async function loginUser(data: loginType) {
@@ -64,8 +64,11 @@ export async function uploadDoc(data: FormData) {
   });
 }
 
-export async function getDocuments() {
-  return apiRequest("/dashboard/documents", {
+export async function getDocuments(page: number) {
+  const params = new URLSearchParams({
+    page: String(page),
+  });
+  return apiRequest(`/dashboard/documents?${params.toString()}`, {
     method: "GET",
   });
 }
@@ -141,10 +144,10 @@ export async function conversationDetail(id: string) {
   });
 }
 
-export async function companyDetails(id: string){
-  return apiRequest(`/dashboard/profile/${id}`,{
-    method: "GET"
-  })
+export async function companyDetails(id: string) {
+  return apiRequest(`/dashboard/profile/${id}`, {
+    method: "GET",
+  });
 }
 
 export async function updateCompanyProfile(data: Profile) {
@@ -154,9 +157,15 @@ export async function updateCompanyProfile(data: Profile) {
   });
 }
 
-export async function updatePassword(data: passwordSchema){
+export async function updatePassword(data: passwordSchema) {
   return publicApiRequest("/dashboard/profile/password", {
     method: "PATCH",
     body: JSON.stringify(data),
+  });
+}
+
+export async function docDetails(id: string) {
+  return apiRequest(`/dashboard/documents/${id}`, {
+    method: "GET",
   });
 }

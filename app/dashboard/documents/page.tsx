@@ -1,11 +1,25 @@
 "use client";
-
-import { useState, useRef, useCallback, useEffect } from "react";
+import { Trash2Icon } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { uploadDoc } from "@/api/auth";
 import { getDocuments, deleteDoc, reprocessDoc } from "@/api/auth";
 import { formatDate } from "@/helper/formatdate";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useRouter, useSearchParams } from "next/navigation";
+import { DocumentDetailsDialog } from "@/components/Documents/documentDialog";
 
 type DocumentStatus = "PROCESSED" | "PROCESSING" | "FAILED";
 
@@ -15,6 +29,15 @@ interface Document {
   fileSize: string;
   status: DocumentStatus;
   createdAt: string;
+  updatedAt: string;
+}
+
+interface Pagination {
+  totalPages: number;
+  totalDocs: number;
+  currentPage: number;
+  hasNextPage: number;
+  hasPrevPage: number;
 }
 
 const statusConfig = {
@@ -64,11 +87,48 @@ const pipelineSteps = [
 ];
 
 export default function DocumentsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const page = Number(searchParams.get("page")) || 1;
   const [isDragging, setIsDragging] = useState(false);
   const [isUpLoading, setIsUpLoading] = useState(false);
   const [Error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+
+  const updateQueryParams = (updates: Record<string, string>) => {
+    const params = new URLSearchParams(searchParams);
+    params.delete("docId");
+    Object.entries(updates).forEach(([key, value]) => {
+      params.set(key, value);
+    });
+    router.replace(`/dashboard/documents?${params.toString()}`);
+  };
+
+  useEffect(() => {
+    if (!searchParams.get("page")) {
+      updateQueryParams({ page: "1" });
+    }
+  }, []);
+
+  const previousPage = () => {
+    updateQueryParams({
+      page: String(page - 1),
+    });
+  };
+
+  const nextPage = () => {
+    updateQueryParams({
+      page: String(page + 1),
+    });
+  };
+
+  const gotoPage = (pageNumber: number) => {
+    updateQueryParams({
+      page: String(pageNumber),
+    });
+  };
 
   const uploadDocument = async (file: File) => {
     try {
@@ -106,7 +166,7 @@ export default function DocumentsPage() {
       await uploadDocument(file);
       setTimeout(async () => {
         try {
-          const data = await getDocuments();
+          const data = await getDocuments(page);
           setDocuments(data.documents);
         } catch (error) {
           console.error(error);
@@ -134,7 +194,7 @@ export default function DocumentsPage() {
       console.log(response);
       if (response.success) {
         toast.success(response.message);
-        const data = await getDocuments();
+        const data = await getDocuments(page);
         setDocuments(data.documents);
       } else {
         alert(response.message);
@@ -150,24 +210,30 @@ export default function DocumentsPage() {
       console.log(response);
       if (response.success) {
         toast.success(response.message);
-        const data = await getDocuments();
+        const data = await getDocuments(page);
         setDocuments(data.documents);
       } else {
         toast.error(response.message);
       }
     } catch (err) {
       console.log(err);
-      // toast.error(err)
     }
+  };
+
+  const handleClick = (docId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("docId", docId);
+    router.push(`/dashboard/documents?${params.toString()}`, { scroll: false });
   };
 
   useEffect(() => {
     let isMounted = true;
     const fetchDocs = async () => {
       try {
-        const data = await getDocuments();
+        const data = await getDocuments(page);
         if (isMounted) {
           setDocuments(data.documents);
+          setPagination(data.pagination);
         }
       } catch (err) {
         console.log(err);
@@ -177,89 +243,99 @@ export default function DocumentsPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [page]);
+
+  const limit = 4
+
+  const totalPages = pagination?.totalPages || 1;
+  const totalDocs = pagination?.totalDocs || 1;
+
+  const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
+  const start = (page - 1) * limit + 1;
+  const end = Math.min(page * limit, totalDocs);
 
   return (
-    <div className="p-md lg:px-12 max-w-container-max mx-auto space-y-xl">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-headline-xl-mobile md:text-headline-xl font-bold text-on-background">
-            Documents
-          </h1>
-          <p className="text-on-surface-variant mt-1 text-body-md">
-            Manage and train the AI on your knowledge base.
-          </p>
-        </div>
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          className=" transition-colors px-6 py-3 rounded-lg
+    <>
+      <div className="p-md lg:px-12 max-w-container-max mx-auto space-y-xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-headline-xl-mobile md:text-headline-xl font-bold text-on-background">
+              Documents
+            </h1>
+            <p className="text-on-surface-variant mt-1 text-body-md">
+              Manage and train the AI on your knowledge base.
+            </p>
+          </div>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            className=" transition-colors px-6 py-3 rounded-lg
                            flex items-center justify-center gap-2 shadow-sm font-semibold group"
-        >
-          <span className="material-symbols-outlined text-[20px] group-hover:rotate-90 transition-transform">
-            add
-          </span>
-          Upload Document
-        </Button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        {[
-          {
-            icon: "folder",
-            label: `${documents.length} Total`,
-            bg: "bg-surface-container",
-          },
-          {
-            icon: "check_circle",
-            label: `${documents.filter((d) => d.status === "PROCESSED").length} Processed`,
-            bg: "bg-surface-container-highest",
-            iconColor: "text-[#059669]",
-          },
-          {
-            icon: "sync",
-            label: `${documents.filter((d) => d.status === "PROCESSING").length} Processing`,
-            bg: "bg-secondary-fixed",
-            iconColor: "text-secondary animate-spin-slow",
-          },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-surface-container-lowest border border-outline-variant 
-                       shadow-sm rounded-full px-4 py-2 flex items-center gap-2"
           >
+            <span className="material-symbols-outlined text-[20px] group-hover:rotate-90 transition-transform">
+              add
+            </span>
+            Upload Document
+          </Button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {[
+            {
+              icon: "folder",
+              label: `${documents.length} Total`,
+              bg: "bg-surface-container",
+            },
+            {
+              icon: "check_circle",
+              label: `${documents.filter((d) => d.status === "PROCESSED").length} Processed`,
+              bg: "bg-surface-container-highest",
+              iconColor: "text-[#059669]",
+            },
+            {
+              icon: "sync",
+              label: `${documents.filter((d) => d.status === "PROCESSING").length} Processing`,
+              bg: "bg-secondary-fixed",
+              iconColor: "text-secondary animate-spin-slow",
+            },
+          ].map((stat) => (
             <div
-              className={`w-6 h-6 rounded-full ${stat.bg} flex items-center justify-center`}
+              key={stat.label}
+              className="bg-surface-container-lowest border border-outline-variant 
+                       shadow-sm rounded-full px-4 py-2 flex items-center gap-2"
             >
-              <span
-                className={`material-symbols-outlined text-[16px] ${stat.iconColor || "text-on-surface"}`}
+              <div
+                className={`w-6 h-6 rounded-full ${stat.bg} flex items-center justify-center`}
               >
-                {stat.icon}
+                <span
+                  className={`material-symbols-outlined text-[16px] ${stat.iconColor || "text-on-surface"}`}
+                >
+                  {stat.icon}
+                </span>
+              </div>
+              <span className="text-label-md text-on-surface font-semibold">
+                {stat.label}
               </span>
             </div>
-            <span className="text-label-md text-on-surface font-semibold">
-              {stat.label}
-            </span>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2 space-y-6">
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setIsDragging(false);
-              const files = Array.from(e.dataTransfer.files);
-              if (files.length > 0) {
-                uploadFile(files[0] as File);
-              }
-            }}
-            className={`
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <div className="lg:col-span-2 space-y-6">
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                const files = Array.from(e.dataTransfer.files);
+                if (files.length > 0) {
+                  uploadFile(files[0] as File);
+                }
+              }}
+              className={`
               bg-surface-container-lowest rounded-xl border-2 border-dashed
               transition-all duration-300 p-8
               flex flex-col items-center justify-center text-center cursor-pointer group shadow-sm
@@ -269,304 +345,321 @@ export default function DocumentsPage() {
                   : "border-secondary/40 hover:border-secondary hover:bg-surface-container/30"
               }
             `}
-          >
-            {isUpLoading ? (
-              <h3 className="text-headline-md text-on-background mb-2">
-                Uploading...
-              </h3>
-            ) : (
-              <div
-                className="w-16 h-16 bg-secondary-fixed rounded-full flex items-center 
-                            justify-center mb-4 group-hover:scale-110 transition-transform duration-300"
-              >
-                <span className="material-symbols-outlined text-secondary text-[32px]">
-                  cloud_upload
-                </span>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  className="hidden"
-                  ref={fileInputRef}
-                  onChange={handleFileInput}
-                />
-              </div>
-            )}
-            {Error && <p className="text-red-500">{Error}</p>}
-            <h3 className="text-headline-md text-on-background mb-2">
-              Drag and drop your PDF files here
-            </h3>
-            <p className="text-on-surface-variant text-body-md mb-4">
-              Supports PDF files up to 50MB
-            </p>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="text-secondary text-label-md font-semibold hover:underline 
-              decoration-2 underline-offset-4"
             >
-              Or browse files
-            </button>
-          </div>
-
-          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-bright">
-              <h3 className="text-on-background font-semibold text-[18px]">
-                Recent Files
+              {isUpLoading ? (
+                <h3 className="text-headline-md text-on-background mb-2">
+                  Uploading...
+                </h3>
+              ) : (
+                <div
+                  className="w-16 h-16 bg-secondary-fixed rounded-full flex items-center 
+                            justify-center mb-4 group-hover:scale-110 transition-transform duration-300"
+                >
+                  <span className="material-symbols-outlined text-secondary text-[32px]">
+                    cloud_upload
+                  </span>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    ref={fileInputRef}
+                    onChange={handleFileInput}
+                  />
+                </div>
+              )}
+              {Error && <p className="text-red-500">{Error}</p>}
+              <h3 className="text-headline-md text-on-background mb-2">
+                Drag and drop your PDF files here
               </h3>
-              <button className="p-1.5 text-on-surface-variant hover:bg-surface-container rounded-md">
-                <span className="material-symbols-outlined text-[20px]">
-                  filter_list
-                </span>
+              <p className="text-on-surface-variant text-body-md mb-4">
+                Supports PDF files up to 50MB
+              </p>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="text-secondary text-label-md font-semibold hover:underline 
+              decoration-2 underline-offset-4"
+              >
+                Or browse files
               </button>
             </div>
 
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr
-                    className="bg-surface-bright border-b border-outline-variant/50 
+            <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-bright">
+                <h3 className="text-on-background font-semibold text-[18px]">
+                  Recent Files
+                </h3>
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr
+                      className="bg-surface-bright border-b border-outline-variant/50 
                                  text-on-surface-variant text-label-sm uppercase tracking-wider"
-                  >
-                    <th className="p-4 w-12 text-center">
-                      <input
-                        type="checkbox"
-                        className="rounded border-outline-variant text-secondary focus:ring-secondary"
-                      />
-                    </th>
-                    <th className="p-4 font-semibold">File Name</th>
-                    <th className="p-4 font-semibold">Size</th>
-                    <th className="p-4 font-semibold">Status</th>
-                    <th className="p-4 font-semibold">Uploaded</th>
-                    <th className="p-4 font-semibold text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="text-body-md divide-y divide-outline-variant/30">
-                  {documents.map((doc) => {
-                    const status = statusConfig[doc.status];
-                    const isProcessing = doc.status === "PROCESSING";
-                    return (
-                      <tr
-                        key={doc.id}
-                        className={`hover:bg-surface/50 transition-colors group
+                    >
+                      <th className="p-4 font-semibold">File Name</th>
+                      <th className="p-4 font-semibold">Size</th>
+                      <th className="p-4 font-semibold">Status</th>
+                      <th className="p-4 font-semibold">Uploaded</th>
+                      <th className="p-4 font-semibold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-body-md divide-y divide-outline-variant/30">
+                    {documents.map((doc) => {
+                      const status = statusConfig[doc.status];
+                      const isProcessing = doc.status === "PROCESSING";
+                      return (
+                        <tr
+                          key={doc.id}
+                          className={`hover:bg-surface/50 transition-colors group
                           ${isProcessing ? "bg-surface-container-low/30" : ""}
                         `}
-                      >
-                        <td className="p-4 text-center">
-                          <input
-                            type="checkbox"
-                            className="rounded border-outline-variant text-secondary focus:ring-secondary"
-                          />
-                        </td>
-                        <td className="p-4 font-medium text-on-background">
-                          <div className="flex items-center gap-3">
-                            <span
-                              className={`material-symbols-outlined text-[20px] ${isProcessing ? "text-outline" : "text-error"}`}
-                            >
-                              picture_as_pdf
-                            </span>
-                            {doc.filename.split("_")[0] +
-                              "." +
-                              doc.filename.split("_")[1]}
-                          </div>
-                        </td>
-                        <td className="p-4 text-on-surface-variant text-sm">
-                          {doc.fileSize}
-                        </td>
-                        <td className="p-4">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 
-                                          rounded-full text-xs font-semibold ${status.className}`}
-                          >
-                            {status.dot}
-                            {status.label}
-                          </span>
-                        </td>
-                        <td className="p-4 text-on-surface-variant text-sm">
-                          {formatDate(doc.createdAt)}
-                        </td>
-                        <td className="p-4 text-right">
-                          {doc.status === "FAILED" ? (
-                            <button
-                              onClick={() => reprocess_Doc(doc.id)}
-                              className="p-1.5 text-on-surface-variant hover:text-secondary 
-                                               opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="Retry"
-                            >
-                              <span className="material-symbols-outlined text-[20px]">
-                                refresh
+                        >
+                          <td className="p-4 font-medium text-on-background">
+                            <div className="flex items-center gap-3">
+                              <span
+                                className={`material-symbols-outlined text-[20px] ${isProcessing ? "text-outline" : "text-error"}`}
+                              >
+                                picture_as_pdf
                               </span>
-                            </button>
-                          ) : (
-                            <button
-                              className={`p-1.5 text-on-surface-variant hover:text-secondary 
+                              {doc.filename.split("_")[0] +
+                                "." +
+                                doc.filename.split("_")[1]}
+                            </div>
+                          </td>
+                          <td className="p-4 text-on-surface-variant text-sm">
+                            {doc.fileSize}
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 
+                                          rounded-full text-xs font-semibold ${status.className}`}
+                            >
+                              {status.dot}
+                              {status.label}
+                            </span>
+                          </td>
+                          <td className="p-4 text-on-surface-variant text-sm">
+                            {formatDate(doc.createdAt)}
+                          </td>
+                          <td className="p-4 text-right">
+                            {doc.status === "FAILED" ? (
+                              <button
+                                onClick={() => reprocess_Doc(doc.id)}
+                                className="p-1.5 text-on-surface-variant hover:text-secondary 
+                                               opacity-0 group-hover:opacity-100 transition-opacity"
+                                title="Retry"
+                              >
+                                <span className="material-symbols-outlined text-[20px]">
+                                  refresh
+                                </span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleClick(doc.id)}
+                                className={`p-1.5 text-on-surface-variant hover:text-secondary 
                                                transition-opacity
                                                ${isProcessing ? "opacity-50 cursor-not-allowed" : "opacity-0 group-hover:opacity-100"}`}
-                            >
-                              <span className="material-symbols-outlined text-[20px]">
-                                visibility
-                              </span>
-                            </button>
-                          )}
-                          <button
-                            onClick={() => delete_Doc(doc.id)}
-                            className={`p-1.5 text-on-surface-variant hover:text-error 
+                              >
+                                <span className="material-symbols-outlined text-[20px]">
+                                  visibility
+                                </span>
+                              </button>
+                            )}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <button
+                                  className={`p-1.5 text-on-surface-variant hover:text-error 
                                              transition-opacity
                                              ${isProcessing ? "opacity-50 cursor-not-allowed" : "opacity-0 group-hover:opacity-100"}`}
-                          >
-                            <span className="material-symbols-outlined text-[20px]">
-                              delete
-                            </span>
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                                >
+                                  <span className="material-symbols-outlined text-[20px]">
+                                    delete
+                                  </span>
+                                </button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent
+                                size="sm"
+                                className="bg-background outline-none ring-0 border-none"
+                              >
+                                <AlertDialogHeader>
+                                  <AlertDialogMedia className="bg-destructive/10 text-destructive">
+                                    <Trash2Icon />
+                                  </AlertDialogMedia>
+                                  <AlertDialogTitle>
+                                    Delete Document?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to Delete the
+                                    Document? Once you click on delete the
+                                    process can't be undone and the document
+                                    will be deleted permanently.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel variant="outline">
+                                    Cancel
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => delete_Doc(doc.id)}
+                                    variant="destructive"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
-            {/* Mobile cards — shown below md */}
-            <div className="md:hidden flex flex-col divide-y divide-outline-variant/30">
-              {documents.map((doc) => {
-                const status = statusConfig[doc.status];
-                return (
-                  <div
-                    key={doc.id}
-                    className={`p-4 hover:bg-surface/50 
+              <div className="md:hidden flex flex-col divide-y divide-outline-variant/30">
+                {documents.map((doc) => {
+                  const status = statusConfig[doc.status];
+                  return (
+                    <div
+                      key={doc.id}
+                      className={`p-4 hover:bg-surface/50 
                       ${doc.status === "PROCESSING" ? "bg-surface-container-low/30" : ""}
                     `}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2 font-medium text-on-background">
-                        <span
-                          className={`material-symbols-outlined text-[20px] 
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2 font-medium text-on-background">
+                          <span
+                            className={`material-symbols-outlined text-[20px] 
                           ${doc.status === "PROCESSING" ? "text-outline" : "text-error"}`}
-                        >
-                          picture_as_pdf
-                        </span>
-                        {doc.filename}
+                          >
+                            picture_as_pdf
+                          </span>
+                          {doc.filename}
+                        </div>
+                        <button className="text-on-surface-variant">
+                          <span className="material-symbols-outlined text-[20px]">
+                            more_vert
+                          </span>
+                        </button>
                       </div>
-                      <button className="text-on-surface-variant">
-                        <span className="material-symbols-outlined text-[20px]">
-                          more_vert
-                        </span>
-                      </button>
-                    </div>
-                    <div className="flex justify-between items-center text-sm text-on-surface-variant">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 
+                      <div className="flex justify-between items-center text-sm text-on-surface-variant">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 
                                        rounded-full text-[10px] font-semibold ${status.className}`}
-                      >
-                        {status.dot} {status.label}
-                      </span>
-                      <span>
-                        {doc.fileSize} •{" "}
-                        {formatDate(doc.createdAt).split(",")[0]}
-                      </span>
+                        >
+                          {status.dot} {status.label}
+                        </span>
+                        <span>
+                          {doc.fileSize} •{" "}
+                          {formatDate(doc.createdAt).split(",")[0]}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
 
-            {/* Pagination */}
-            <div
-              className="p-4 border-t border-outline-variant/50 flex items-center 
+              <div
+                className="p-4 border-t border-outline-variant/50 flex items-center 
                             justify-between bg-surface-bright"
-            >
-              <p className="text-sm text-on-surface-variant hidden sm:block">
-                Showing 1 to 5 of 12 entries
-              </p>
-              <div className="flex gap-1 w-full sm:w-auto justify-center">
-                <button
-                  className="px-3 py-1 rounded border border-outline-variant 
+              >
+                <p className="text-sm text-on-surface-variant hidden sm:block">
+                  Showing {start} to {end} of {totalDocs} Documents
+                </p>
+                <div className="flex gap-1 w-full sm:w-auto justify-center">
+                  <button
+                    onClick={() => previousPage()}
+                    disabled={!pagination?.hasPrevPage}
+                    className="px-3 py-1 rounded border border-outline-variant 
                                    text-on-surface-variant hover:bg-surface-container 
                                    text-sm font-medium transition-colors disabled:opacity-50"
-                >
-                  Previous
-                </button>
-                {[1, 2, 3].map((page) => (
-                  <button
-                    key={page}
-                    className={`w-8 h-8 rounded text-sm font-medium flex items-center justify-center transition-colors
+                  >
+                    Previous
+                  </button>
+                  {pages.map((pageNumber) => (
+                    <button
+                      key={pageNumber}
+                      onClick={() => gotoPage(pageNumber)}
+                      className={`w-8 h-8 rounded text-sm font-medium flex items-center justify-center transition-colors
                       ${
-                        page === 1
+                        pageNumber === page
                           ? "bg-secondary text-on-secondary shadow-sm"
                           : "border border-outline-variant hover:bg-surface-container text-on-surface-variant"
                       }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  className="px-3 py-1 rounded border border-outline-variant 
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => nextPage()}
+                    disabled={!pagination?.hasNextPage}
+                    className="px-3 py-1 rounded border border-outline-variant 
                                    text-on-surface-variant hover:bg-surface-container 
                                    text-sm font-medium transition-colors"
-                >
-                  Next
-                </button>
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* ── Right: Pipeline sidebar ── */}
-        <div className="lg:col-span-1">
-          <div
-            className="bg-surface-container rounded-xl p-6 border border-secondary/20 
+          <div className="lg:col-span-1">
+            <div
+              className="bg-surface-container rounded-xl p-6 border border-secondary/20 
                           shadow-sm sticky top-24"
-          >
-            <div className="flex items-center gap-2 mb-4">
-              <span className="material-symbols-outlined text-secondary">
-                memory
-              </span>
-              <h3 className="text-on-background font-semibold text-[18px]">
-                Processing Pipeline
-              </h3>
-            </div>
-            <p className="text-on-surface-variant text-sm mb-6">
-              Here's what happens when you upload a document to build your AI
-              knowledge base.
-            </p>
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <span className="material-symbols-outlined text-secondary">
+                  memory
+                </span>
+                <h3 className="text-on-background font-semibold text-[18px]">
+                  Processing Pipeline
+                </h3>
+              </div>
+              <p className="text-on-surface-variant text-sm mb-6">
+                Here's what happens when you upload a document to build your AI
+                knowledge base.
+              </p>
+              <div className="flex flex-col gap-0 relative">
+                <div className="absolute left-3.75 top-4 bottom-8 w-0.5 bg-secondary-fixed z-0" />
 
-            {/* Pipeline steps */}
-            <div className="flex flex-col gap-0 relative">
-              {/* Connecting vertical line */}
-              <div className="absolute left-3.75 top-4 bottom-8 w-0.5 bg-secondary-fixed z-0" />
-
-              {pipelineSteps.map((step, index) => (
-                <div
-                  key={step.title}
-                  className={`flex gap-4 relative z-10 group ${index < pipelineSteps.length - 1 ? "pb-6" : ""}`}
-                >
+                {pipelineSteps.map((step, index) => (
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center 
+                    key={step.title}
+                    className={`flex gap-4 relative z-10 group ${index < pipelineSteps.length - 1 ? "pb-6" : ""}`}
+                  >
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center 
                                   shrink-0 shadow-sm group-hover:scale-110 transition-transform
                                   ${
                                     step.isFinal
                                       ? "bg-secondary text-on-secondary"
                                       : "bg-surface-container-lowest border-2 border-secondary"
                                   }`}
-                  >
-                    <span
-                      className={`material-symbols-outlined text-[16px] ${!step.isFinal ? "text-secondary" : ""}`}
                     >
-                      {step.icon}
-                    </span>
+                      <span
+                        className={`material-symbols-outlined text-[16px] ${!step.isFinal ? "text-secondary" : ""}`}
+                      >
+                        {step.icon}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="text-label-md font-bold text-on-background">
+                        {step.title}
+                      </h4>
+                      <p className="text-sm text-on-surface-variant mt-1">
+                        {step.description}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-label-md font-bold text-on-background">
-                      {step.title}
-                    </h4>
-                    <p className="text-sm text-on-surface-variant mt-1">
-                      {step.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+      <DocumentDetailsDialog />
+    </>
   );
 }
