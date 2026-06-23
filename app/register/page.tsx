@@ -10,6 +10,7 @@ import { z } from "zod";
 import { FieldError, UseFormRegisterReturn } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { registerUser } from "@/api/auth";
+import { toast } from "sonner";
 
 interface FormFieldProps {
   id: string;
@@ -139,9 +140,8 @@ export default function RegisterPage() {
       const { confirmPassword, ...formData } = data;
 
       const response = await registerUser(formData);
-      console.log(response);
-
       if (response.success) {
+        toast.success(response.message)
         router.push("/login");
       }
     } catch (err) {

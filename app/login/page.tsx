@@ -39,7 +39,7 @@ function FormField({
   onTogglePassword,
 }: FormFieldProps) {
   return (
-    <div className="space-y-xs">
+    <div className="space-y-xs flex flex-col">
       <label htmlFor={id} className="block text-label-md text-on-surface">
         {label}
       </label>
@@ -76,8 +76,13 @@ function FormField({
           </button>
         )}
       </div>
-
-      {error && <p className="text-sm  text-red-500">{error.message}</p>}
+      <div className="min-h-[1.5rem] sm:min-h-10 flex items-start mt-1">
+        {error && (
+          <p className="text-sm text-red-500 leading-tight animate-in fade-in duration-200">
+            {error.message}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -93,7 +98,7 @@ export default function LoginPage() {
       .min(8, "Password must be at least 8 characters")
       .regex(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/,
-        "Password must contain uppercase, lowercase, number and special character",
+        "Must include uppercase, lowercase, number, and special character",
       ),
   });
 
@@ -119,11 +124,12 @@ export default function LoginPage() {
         setSessionMarker();
         toast.success(response.message);
         router.push("/dashboard");
-      } 
+      }
     } catch (err: unknown) {
       console.log(err);
-      const message = err instanceof Error ? err.message : "Something went wrong";
-      toast.error(message)
+      const message =
+        err instanceof Error ? err.message : "Something went wrong";
+      toast.error(message);
     }
   };
   return (
