@@ -14,7 +14,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-
+import { toast } from "sonner";
 
 const chartConfig = {
   count: {
@@ -26,6 +26,7 @@ const chartConfig = {
 export default function Dashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [copiedUrl, setCopiedUrl] = useState(false);
   const [dashData, setDashData] = useState<DashData>({
     success: false,
     message: "",
@@ -67,6 +68,18 @@ export default function Dashboard() {
       cancelled = true;
     };
   }, [router]);
+
+  const chatbotUrl = dashData?.chatBotUrl;
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(chatbotUrl);
+      setCopiedUrl(true);
+      toast.success("Chatbot Url Copied Successfully");
+      setTimeout(() => setCopiedUrl(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy URL", err);
+    }
+  };
 
   if (loading) {
     return (
@@ -174,8 +187,8 @@ export default function Dashboard() {
                 View All
               </Link>
             </div>
-            <div className="overflow-x-auto flex-1 flex flex-col">
-              <table className="w-full h-full text-left border-collapse min-w-150">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-150">
                 <thead>
                   <tr className="border-b border-outline-variant bg-surface-container-low">
                     <th className="px-4 py-3 font-medium uppercase tracking-wider text-xs text-on-surface-variant">
@@ -254,11 +267,14 @@ export default function Dashboard() {
                 Upload Document
               </Link>
 
-              <button className="w-full py-3 px-4 bg-surface-container-low border border-outline-variant text-on-surface font-label-md text-label-md rounded-lg hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
+              <button
+                onClick={handleCopyUrl}
+                className="w-full py-3 px-4 bg-surface-container-low border border-outline-variant text-on-surface font-label-md text-label-md rounded-lg hover:bg-surface-variant transition-colors flex items-center justify-center gap-2"
+              >
                 <span className="material-symbols-outlined text-[20px] text-on-surface-variant">
-                  content_copy
+                  {copiedUrl ? "check" : "content_copy"}
                 </span>
-                Copy Chatbot Link
+                {copiedUrl ? "Copied" : "Copy Chatbot Link"}
               </button>
 
               <Link

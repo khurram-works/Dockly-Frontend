@@ -54,14 +54,14 @@ export default function Footer() {
               {group.heading}
             </h4>
             {group.links.map((link) => (
-              <Link
+              <span
                 key={link}
-                href=""
+                // href=""
                 className="text-on-primary-container opacity-80 hover:opacity-100 
                            hover:text-secondary-fixed transition-opacity"
               >
                 {link}
-              </Link>
+              </span>
             ))}
           </div>
         ))}

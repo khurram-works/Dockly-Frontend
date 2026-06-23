@@ -11,6 +11,7 @@ import { loginUser } from "@/api/auth";
 import { useAuthContext } from "@/context/authContext";
 import { useRouter } from "next/navigation";
 import { setSessionMarker } from "@/lib/sessionCookie";
+import { toast } from "sonner";
 
 interface FormFieldProps {
   id: string;
@@ -113,14 +114,16 @@ export default function LoginPage() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       const response = await loginUser(data);
-      console.log(response);
       if (response.success) {
         setCompany(response.company);
         setSessionMarker();
+        toast.success(response.message);
         router.push("/dashboard");
-      }
-    } catch (err) {
+      } 
+    } catch (err: unknown) {
       console.log(err);
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      toast.error(message)
     }
   };
   return (

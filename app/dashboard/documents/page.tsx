@@ -96,6 +96,7 @@ export default function DocumentsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
+  
 
   const updateQueryParams = (updates: Record<string, string>) => {
     const params = new URLSearchParams(searchParams);
@@ -147,15 +148,45 @@ export default function DocumentsPage() {
     }
   };
 
+  const pollDocumentStatus = async (currentPage: number, maxAttempts = 5) => {
+    let attempts = 0;
+    const interval = 5000;
+
+    const checkStatus = async () => {
+      try {
+        attempts++;
+        const data = await getDocuments(currentPage);
+
+        setDocuments(data.documents);
+        setPagination(data.pagination);
+        const isStillProcessing = data.documents.some(
+          (doc: Document) => doc.status === "PROCESSING",
+        );
+
+        if (isStillProcessing && attempts < maxAttempts) {
+          setTimeout(checkStatus, interval);
+        } else if (isStillProcessing && attempts >= maxAttempts) {
+          toast.info(
+            "Document is taking longer than usual to process. It will update in the background.",
+          );
+        }
+      } catch (error) {
+        console.error("Polling error:", error);
+      }
+    };
+
+    await checkStatus();
+  };
+
   const uploadFile = async (file: File) => {
-    if (file.type != "application/pdf") {
+    if (file.type !== "application/pdf") {
       toast.error("Only PDF files are allowed");
       return;
     }
 
     if (file.size > 50 * 1024 * 1024) {
       setError("File too large. Maximum size is 50MB");
-      toast.error(Error);
+      toast.error("File too large. Maximum size is 50MB");
       return;
     }
 
@@ -164,19 +195,10 @@ export default function DocumentsPage() {
 
     try {
       await uploadDocument(file);
-      setTimeout(async () => {
-        try {
-          const data = await getDocuments(page);
-          setDocuments(data.documents);
-        } catch (error) {
-          console.error(error);
-        } finally {
-          setIsUpLoading(false);
-        }
-      }, 30000);
+      setIsUpLoading(false);
+      pollDocumentStatus(page);
     } catch (err: any) {
       setError(err.message);
-    } finally {
       setIsUpLoading(false);
     }
   };
@@ -192,15 +214,30 @@ export default function DocumentsPage() {
     try {
       const response = await reprocessDoc(documentId);
       console.log(response);
+
       if (response.success) {
         toast.success(response.message);
-        const data = await getDocuments(page);
-        setDocuments(data.documents);
+        const currentPage = page;
+
+        setTimeout(async () => {
+          try {
+            const data = await getDocuments(currentPage);
+            setDocuments(data.documents);
+            setPagination(data.pagination);
+          } catch (fetchError) {
+            console.error(
+              "Failed to refresh documents after delay:",
+              fetchError,
+            );
+            toast.error("Failed to refresh document list.");
+          }
+        }, 10000);
       } else {
-        alert(response.message);
+        toast.error(response.message || "Something went wrong");
       }
     } catch (err) {
-      console.log(err);
+      console.error("Error triggering reprocessing:", err);
+      toast.error("An unexpected error occurred.");
     }
   };
 
@@ -208,15 +245,25 @@ export default function DocumentsPage() {
     try {
       const response = await deleteDoc(documentId);
       console.log(response);
+
       if (response.success) {
         toast.success(response.message);
-        const data = await getDocuments(page);
+        const isLastItemOnPage = documents.length === 1;
+        const targetPage = page > 1 && isLastItemOnPage ? page - 1 : page;
+
+        const data = await getDocuments(targetPage);
         setDocuments(data.documents);
+        setPagination(data.pagination);
+
+        if (targetPage !== page) {
+          gotoPage(targetPage);
+        }
       } else {
-        toast.error(response.message);
+        toast.error(response.message || "Failed to delete document.");
       }
     } catch (err) {
-      console.log(err);
+      console.error("Error deleting document:", err);
+      toast.error("An unexpected error occurred.");
     }
   };
 
@@ -245,7 +292,7 @@ export default function DocumentsPage() {
     };
   }, [page]);
 
-  const limit = 4
+  const limit = 4;
 
   const totalPages = pagination?.totalPages || 1;
   const totalDocs = pagination?.totalDocs || 1;
