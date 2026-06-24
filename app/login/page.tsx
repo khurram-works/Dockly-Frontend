@@ -270,7 +270,6 @@
 //   );
 // }
 
-
 "use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -311,7 +310,10 @@ function FormField({
 }: FormFieldProps) {
   return (
     <div className="flex flex-col">
-      <label htmlFor={id} className="block text-label-md text-on-surface mb-1.5">
+      <label
+        htmlFor={id}
+        className="block text-label-md text-on-surface mb-1.5"
+      >
         {label}
       </label>
 
@@ -362,7 +364,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { setCompany } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
-  
+
   const LoginSchema = z.object({
     email: z.email({ message: "Please enter a valid email address" }),
     password: z
@@ -395,6 +397,8 @@ export default function LoginPage() {
         setCompany(response.company);
         setSessionMarker();
         toast.success(response.message);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         router.push("/dashboard");
       }
     } catch (err: unknown) {
@@ -458,7 +462,10 @@ export default function LoginPage() {
                 id="remember-me"
                 type="checkbox"
               />
-              <label htmlFor="remember-me" className="ml-2 block font-label-md text-label-md text-on-surface-variant cursor-pointer">
+              <label
+                htmlFor="remember-me"
+                className="ml-2 block font-label-md text-label-md text-on-surface-variant cursor-pointer"
+              >
                 Remember me
               </label>
             </div>
@@ -484,7 +491,10 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-6 relative">
-          <div aria-hidden="true" className="absolute inset-0 flex items-center">
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 flex items-center"
+          >
             <div className="w-full border-t border-outline-variant/50"></div>
           </div>
           <div className="relative flex justify-center font-label-sm text-label-sm">
