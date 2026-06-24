@@ -13,25 +13,22 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    if (!company) {
-      verifySession()
-        .then(() => {
-          if (!cancelled) setReady(true);
-        })
-        .catch(() => {
-          if (!cancelled) {
-            clearSessionMarker();
-            router.replace("/login");
-          }
-        });
-    } else {
-      if (!cancelled) setReady(true);
-    }
+
+    verifySession()
+      .then(() => {
+        if (!cancelled) setReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          clearSessionMarker();
+          router.replace("/login");
+        }
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [company, router]);
+  }, []);
 
   if (!ready) {
     return (
