@@ -14,11 +14,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    // If company already exists (from login), skip verification
     if (company) {
       if (!cancelled) setReady(true);
     } else {
-      // Only verify on page refresh/initial load
       verifySession()
         .then(() => {
           if (!cancelled) setReady(true);
@@ -34,7 +32,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [company, router]);
+  }, []);
 
   if (!ready) {
     return (
