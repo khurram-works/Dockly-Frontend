@@ -4,29 +4,34 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { verifySession } from "@/api/auth";
 import { clearSessionMarker } from "@/lib/sessionCookie";
+import { useAuthContext } from "@/context/authContext";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
+  const { company } = useAuthContext();
 
   useEffect(() => {
     let cancelled = false;
-
-    verifySession()
-      .then(() => {
-        if (!cancelled) setReady(true);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          clearSessionMarker();
-          router.replace("/login");
-        }
-      });
+    if (!company) {
+      verifySession()
+        .then(() => {
+          if (!cancelled) setReady(true);
+        })
+        .catch(() => {
+          if (!cancelled) {
+            clearSessionMarker();
+            router.replace("/login");
+          }
+        });
+    } else {
+      if (!cancelled) setReady(true);
+    }
 
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [company, router]);
 
   if (!ready) {
     return (
