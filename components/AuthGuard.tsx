@@ -14,21 +14,27 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    verifySession()
-      .then(() => {
-        if (!cancelled) setReady(true);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          clearSessionMarker();
-          router.replace("/login");
-        }
-      });
+    // If company already exists (from login), skip verification
+    if (company) {
+      if (!cancelled) setReady(true);
+    } else {
+      // Only verify on page refresh/initial load
+      verifySession()
+        .then(() => {
+          if (!cancelled) setReady(true);
+        })
+        .catch(() => {
+          if (!cancelled) {
+            clearSessionMarker();
+            router.replace("/login");
+          }
+        });
+    }
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [company, router]);
 
   if (!ready) {
     return (
