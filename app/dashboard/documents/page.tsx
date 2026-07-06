@@ -592,8 +592,7 @@ export default function DocumentsPage() {
                       </div>
                       <div className="flex justify-between items-center text-sm text-on-surface-variant">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 
-                                       rounded-full text-[10px] font-semibold ${status.className}`}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5rounded-full text-[10px] font-semibold ${status.className}`}
                         >
                           {status.dot} {status.label}
                         </span>
