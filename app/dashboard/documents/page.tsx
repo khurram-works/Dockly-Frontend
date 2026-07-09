@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DocumentDetailsDialog } from "@/components/Documents/documentDialog";
+import { getFileIcon } from "@/helper/filename";
 
 type DocumentStatus = "PROCESSED" | "PROCESSING" | "FAILED";
 
@@ -86,6 +87,28 @@ const pipelineSteps = [
   },
 ];
 
+const allowedExtensions = [
+  "pdf",
+  "doc",
+  "docx",
+  "txt",
+  "md",
+  "epub",
+  "rtf",
+  "html",
+  "csv",
+  "json",
+  "ppt",
+  "pptx",
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "webp",
+  "bmp",
+  "tiff",
+];
+
 export default function DocumentsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -96,7 +119,6 @@ export default function DocumentsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [pagination, setPagination] = useState<Pagination | null>(null);
-  
 
   const updateQueryParams = (updates: Record<string, string>) => {
     const params = new URLSearchParams(searchParams);
@@ -179,8 +201,10 @@ export default function DocumentsPage() {
   };
 
   const uploadFile = async (file: File) => {
-    if (file.type !== "application/pdf") {
-      toast.error("Only PDF files are allowed");
+    const extension = file.name.split(".").pop()?.toLowerCase();
+
+    if (!extension || !allowedExtensions.includes(extension)) {
+      toast.error("Unsupported file type");
       return;
     }
 
@@ -407,7 +431,27 @@ export default function DocumentsPage() {
                   </span>
                   <input
                     type="file"
-                    accept=".pdf"
+                    accept="
+                      .pdf,
+                      .doc,
+                      .docx,
+                      .md,
+                      .txt,
+                      .epub,
+                      .rtf,
+                      .html,
+                      .csv,
+                      .json,
+                      .ppt,
+                      .pptx,
+                      .jpg,
+                      .jpeg,
+                      .png,
+                      .gif,
+                      .webp,
+                      .bmp,
+                      .tiff
+                    "
                     className="hidden"
                     ref={fileInputRef}
                     onChange={handleFileInput}
@@ -416,10 +460,11 @@ export default function DocumentsPage() {
               )}
               {Error && <p className="text-red-500">{Error}</p>}
               <h3 className="text-headline-md text-on-background mb-2">
-                Drag and drop your PDF files here
+                Drag and drop your documents here
               </h3>
               <p className="text-on-surface-variant text-body-md mb-4">
-                Supports PDF files up to 50MB
+                Supports PDF, DOC, DOCX, EPUB, Markdown, TXT, HTML, CSV and JSON
+                files (up to 50MB)
               </p>
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -469,9 +514,7 @@ export default function DocumentsPage() {
                               >
                                 picture_as_pdf
                               </span>
-                              {doc.filename.split("_")[0] +
-                                "." +
-                                doc.filename.split("_")[1]}
+                              {doc.filename}
                             </div>
                           </td>
                           <td className="p-4 text-on-surface-variant text-sm">
@@ -580,7 +623,7 @@ export default function DocumentsPage() {
                             className={`material-symbols-outlined text-[20px] 
                           ${doc.status === "PROCESSING" ? "text-outline" : "text-error"}`}
                           >
-                            picture_as_pdf
+                            {getFileIcon(doc.filename)}
                           </span>
                           {doc.filename}
                         </div>
