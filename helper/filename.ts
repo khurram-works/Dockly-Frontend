@@ -22,9 +22,6 @@ export const getFileIcon = (filename: string) => {
     case "csv":
       return "table_chart";
 
-    case "json":
-      return "data_object";
-
     case "html":
       return "html";
 
@@ -34,10 +31,6 @@ export const getFileIcon = (filename: string) => {
     case "jpg":
     case "jpeg":
     case "png":
-    case "gif":
-    case "webp":
-    case "bmp":
-    case "tiff":
       return "image";
 
     default:

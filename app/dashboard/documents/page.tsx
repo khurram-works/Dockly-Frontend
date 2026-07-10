@@ -94,19 +94,13 @@ const allowedExtensions = [
   "txt",
   "md",
   "epub",
-  "rtf",
   "html",
   "csv",
-  "json",
   "ppt",
   "pptx",
   "jpg",
   "jpeg",
   "png",
-  "gif",
-  "webp",
-  "bmp",
-  "tiff",
 ];
 
 export default function DocumentsPage() {
@@ -438,19 +432,13 @@ export default function DocumentsPage() {
                       .md,
                       .txt,
                       .epub,
-                      .rtf,
                       .html,
                       .csv,
-                      .json,
                       .ppt,
                       .pptx,
                       .jpg,
                       .jpeg,
                       .png,
-                      .gif,
-                      .webp,
-                      .bmp,
-                      .tiff
                     "
                     className="hidden"
                     ref={fileInputRef}
@@ -463,8 +451,8 @@ export default function DocumentsPage() {
                 Drag and drop your documents here
               </h3>
               <p className="text-on-surface-variant text-body-md mb-4">
-                Supports PDF, DOC, DOCX, EPUB, Markdown, TXT, HTML, CSV and JSON
-                files (up to 50MB)
+                Supports PDF, DOC, DOCX, EPUB, Markdown, TXT, CSV, Html
+                files (up to 50MB) and also Images(jpg, jpeg, png)
               </p>
               <button
                 onClick={() => fileInputRef.current?.click()}
