@@ -5,7 +5,6 @@
   scrollbar-gutter: stable;
 }
 :root {
-  /* --- Surfaces --- */
   --surface: #f8f9ff;
   --surface-dim: #cbdbf5;
   --surface-bright: #f8f9ff;
@@ -16,18 +15,14 @@
   --surface-container-highest: #d3e4fe;
   --surface-variant: #d3e4fe;
   --surface-tint: #565e74;
-
-  /* --- Text on surfaces --- */
   --on-surface: #0b1c30;
   --on-surface-variant: #45464d;
   --inverse-surface: #213145;
   --inverse-on-surface: #eaf1ff;
 
-  /* --- Borders --- */
   --outline: #76777d;
   --outline-variant: #c6c6cd;
 
-  /* --- Primary (black/dark navy) --- */
   --primary: #000000;
   --primary-container: #131b2e;
   --primary-fixed: #dae2fd;
@@ -38,7 +33,6 @@
   --on-primary-fixed-variant: #3f465c;
   --inverse-primary: #bec6e0;
 
-  /* --- Secondary (your brand indigo — used for buttons, chips, indicators) --- */
   --brand-secondary: #4648d4;
   --brand-secondary-container: #6063ee;
   --brand-secondary-fixed: #e1e0ff;
@@ -48,7 +42,6 @@
   --brand-on-secondary-fixed: #07006c;
   --brand-on-secondary-fixed-variant: #2f2ebe;
 
-  /* --- Tertiary --- */
   --tertiary: #000000;
   --tertiary-container: #191c1e;
   --tertiary-fixed: #e0e3e5;
@@ -58,26 +51,24 @@
   --on-tertiary-fixed: #191c1e;
   --on-tertiary-fixed-variant: #444749;
 
-  /* --- Error --- */
   --error: #ba1a1a;
   --error-container: #ffdad6;
   --on-error: #ffffff;
   --on-error-container: #93000a;
 
-  /* --- Background --- */
   --background: #f8f9ff;
   --on-background: #0b1c30;
 
 
-  --shadcn-background: 225 100% 99%; /* = your --surface */
-  --shadcn-foreground: 215 50% 12%; /* = your --on-surface */
+  --shadcn-background: 225 100% 99%; 
+  --shadcn-foreground: 215 50% 12%; 
   --shadcn-card: 0 0% 100%;
   --shadcn-card-foreground: 215 50% 12%;
   --shadcn-popover: 0 0% 100%;
   --shadcn-popover-foreground: 215 50% 12%;
-  --shadcn-primary: 0 0% 0%; /* black */
+  --shadcn-primary: 0 0% 0%;
   --shadcn-primary-foreground: 0 0% 100%;
-  --shadcn-secondary: 243 64% 55%; /* = your brand indigo */
+  --shadcn-secondary: 243 64% 55%;
   --shadcn-secondary-foreground: 0 0% 100%;
   --shadcn-muted: 215 20% 95%;
   --shadcn-muted-foreground: 215 10% 40%;
@@ -104,17 +95,17 @@
   --color-surface-container-highest: var(--surface-container-highest);
   --color-surface-variant: var(--surface-variant);
 
-  /* --- Text colors → text-on-surface etc. --- */
+
   --color-on-surface: var(--on-surface);
   --color-on-surface-variant: var(--on-surface-variant);
   --color-inverse-surface: var(--inverse-surface);
   --color-inverse-on-surface: var(--inverse-on-surface);
 
-  /* --- Borders → border-outline-variant etc. --- */
+
   --color-outline: var(--outline);
   --color-outline-variant: var(--outline-variant);
 
-  /* --- Primary colors --- */
+
   --color-primary: var(--primary);
   --color-primary-container: var(--primary-container);
   --color-on-primary: var(--on-primary);
@@ -132,19 +123,17 @@
   --color-on-secondary-fixed-variant: var(--brand-on-secondary-fixed-variant);
 
 
-  /* --- Tertiary --- */
   --color-tertiary: var(--tertiary);
   --color-tertiary-container: var(--tertiary-container);
   --color-on-tertiary: var(--on-tertiary);
   --color-on-tertiary-container: var(--on-tertiary-container);
 
-  /* --- Error --- */
+
   --color-error: var(--error);
   --color-error-container: var(--error-container);
   --color-on-error: var(--on-error);
   --color-on-error-container: var(--on-error-container);
 
-  /* --- Background --- */
   --color-background: var(--background);
   --color-on-background: var(--on-background);
 
@@ -157,7 +146,7 @@
 
   --width-container-max: 1280px;
 
-  /* Font families */
+
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
